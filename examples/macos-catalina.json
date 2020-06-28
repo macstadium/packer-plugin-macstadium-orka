@@ -1,0 +1,23 @@
+{
+  "variables": {
+    "source_image": "macos-catalina-10-15-5",
+    "destination_image_name_prefix": "packer"
+  },
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "echo we are running on the remote host",
+        "hostname",
+        "touch .we-ran-packer-successfully"
+      ]
+    }
+  ],
+  "builders": [{
+    "type": "macstadium-orka",
+    "source_image": "{{user `source_image`}}",
+    "image_name": "{{user `destination_image_name_prefix`}}-{{user `source_image`}}-{{timestamp}}",
+    "simulate_create": false,
+    "do_not_delete": false
+  }]
+}
