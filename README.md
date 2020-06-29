@@ -132,6 +132,9 @@ These are a list of things that are pending to accomplish within' this repo.  Co
  * Add tests (should do this first though, as this is important to keep this plugin functional and debugging issues)
  * Add image management features into the builder instead of having to manage out-of-band with orka cli (eg: delete image)
  * Migrate to the (as of yet) undocumented Orka API.  Maybe MacStadium will help and provide me some documentation?  This will simplify the code greatly, and remove the reliance on the Orka CLI to be pre-installed and pre-configured.  Although, arguably this may make this more complicated because then you need to specify the API Key/Token/Account information into this plugin.
+ * Consider implementing for this plugin to automatically create a VM Config (before, and possibly after tied to the image just created)
+ * Random thought, maybe this plugin to be able to scan configs and/or images available and automatically use the first one it finds?  If it'd make it easier?  I would need to explore and discuss this with some other users if this would be useful and how best to do it.
+ * Improve the JSON parsing code.  JSON parsing in Golang is quite messy, and I'm not particularly good at it yet, so the code for parsing it is very messy.  See: line 137-176 of [builder/orka/step_orka_create.go](./builder/orka/step_orka_create.go) and look at the function `ExtractIPHost` in that file as well.  Could be much improved and hopefully simplified.  Contributors welcome!!!
  * Clean up / improve code / catch more sharp edges and edge-cases, deal with any issues filed on Github.
 
 ## Original Author / License
