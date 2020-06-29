@@ -97,7 +97,7 @@ orka image delete --image <destination-image-name> -y
 
 ## Changelog / History
 
- * [1.0.0] - Initial Public Release
+ * [v1.0.0] - Initial Public Release
    * Basic functionality wrapper around Orka CLI
    * Setup Github Action to automatically build and release
 
@@ -146,7 +146,7 @@ This plugin is "very-loosely" based on and took inspiration from the [Packer Nul
 [Latest Release]: https://github.com/andrewfarley/packer-builder-macstadium-orka/releases
 [Farley Farley]: https://github.com/andrewfarley
 [GNU GPL v3]: https://choosealicense.com/licenses/gpl-3.0/
-[1.0.0]: https://github.com/andrewfarley/packer-builder-macstadium-orka/releases/tag/v1.0.0
+[v1.0.0]: https://github.com/andrewfarley/packer-builder-macstadium-orka/releases/tag/v1.0.0
 [SSH Communicator]: https://www.packer.io/docs/communicators/ssh
 [Packer Builder Veertu Anka]: https://github.com/veertuinc/packer-builder-veertu-anka
 [Packer Null Builder]: https://github.com/hashicorp/packer/tree/master/builder/null
