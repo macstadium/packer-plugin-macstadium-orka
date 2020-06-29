@@ -16,6 +16,9 @@ import (
 
 type stepOrkaCreate struct{}
 
+// TODO: This string parsing/extraction logic seems solid, but could probably be simplified.
+//       although effort here seems useless because I'm hoping MacStadium makes their Orka
+//       CLI support JSON ouptut for all commands soon, so we can just centralize on JSON
 func ExtractIPHost(output string) (string, int, error) {
 	// log.Println("ExtractIPHost: " + output)
 
@@ -100,11 +103,6 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		err = nil
 	} else {
 			// ui.Say("Actually creating VM...")
-			
-			// For testing/dev
-			// results, err = RunCommand(
-			// 		"invalid", "command")
-
 			results, err = RunCommand( 
 					"orka","vm","deploy",
 					"-v",source_image,
@@ -124,9 +122,9 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	ui.Say("Looking up VMID...")
 	jsonString, _ := RunCommand(
 		"orka","vm","list","--json")
-	// jsonString, _ := RunCommand(
-	// 	"cat","/tmp/testjson")
 		
+	// TODO: This whole JSON parsing below is just a mess, it's a mess in general
+	//       with golang.  If anyone wants to improve this please do it.
 	var jsonMap map[string]interface{}
 	json.Unmarshal([]byte(jsonString), &jsonMap)
 	topLevelJson := jsonMap["virtual_machine_resources"].([]interface {})
@@ -135,6 +133,12 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	wasInHere := false
 
 	// Search for a VM Name the same as our image (how Orka works)
+	// NOTE/TODO: There is a sort-of bug in the logic here below, that it will
+	//            detect all VMs that were launched from the same launch config.  This
+	//            potentially could lead to this plugin shutting down one of your VMs
+	//            that you didn't intend.  I'm not 100% sure how to fix this, other than
+	//            just recommending that you create a new launch config any time for your
+	//            automation, and only use it for your automation.
   for _, value := range topLevelJson {
 		isInHere = false
     // log.Printf("Character %d of toplevel is = %s\n", index, value)

@@ -38,6 +38,8 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		state.Put("error", myerr)
 		ui.Error(myerr.Error())
 		return multistep.ActionHalt
+	} else {
+		ui.Say("Image creation completed successfully")
 	}
 
 	s.imageID = vmid
