@@ -71,22 +71,23 @@ By default this plugin automatically creates an image of the VM after any provis
 
 [MacStadium Orka] base images have SSH enabled by default and the username/password is `admin:admin` because they are within' a private network by default.  So this plugin has those credentials hardcoded by default, but you can of course customize the communicator.  See the options from the [SSH Communicator].
 
-## Example Commands
+## Example Orka Commands
+
+These aren't directly related to this plugin, exactly, but they're a bit of a simplified guide to get you started.  For a more full guide see: [Orka Setup Guide].
 
 ```bash
 # Create a config which is used for source_image above
 orka vm create-config -v macos-catalina-10-15-5 -c 3 --C 3 --vnc --base-image macos-catalina-10.15.5.img -y
 
 # In essence, this plugin automates running the following 3 commands...
-
 # Start a VM (using the config above)
 orka vm deploy -v macos-catalina-10-15-5 --vnc -y
 
-# Stop and remove a VM
-orka vm delete --vm base-image-catalina -y
-
 # Save a VM's disk to a disk image
 orka image save -v <vmid-here-from-orka-vm-list> -b <destination-image-name> -y
+
+# Stop and remove a VM
+orka vm delete --vm base-image-catalina -y
 
 # Once you're done working with an image and want to delete
 orka image delete --image <destination-image-name> -y
@@ -102,8 +103,6 @@ orka image delete --image <destination-image-name> -y
 
 If you want to help contribute to this plugin or find a bug, please [file an issue] on Github, and/or submit me a PR.  This is Open Source, so don't expect me to fix bugs immediately, but I'll try my best to reasonably support this plugin.  Contributors are always welcome though.
 
-This plugin is "very-loosely" based on and took inspiration from the [Packer Null Builder], [Packer LXD Builder], and the [Packer Builder Veertu Anka].
-
 To get a development environment up will need a recent golang installed and setup.  Then with a single make command below command it will build, install, and try to run the example at [examples/macos-catalina.json](./examples/macos-catalina.json).  You may need to edit this file to have the source VM config that you have locally, as it is hardcoded to my environment's image `macos-catalina-10-15-5` at the moment.
 
 ```bash
@@ -114,16 +113,20 @@ Finally, if you want to support me or this project in some way, please donate to
 
 ## Todo (in no particular order)
 
+These are a list of things that are pending to accomplish within' this repo.  Contributors welcome, I might do some of these also, eventually.
+
  * Add tests (should do this first though, as this is important to keep this plugin functional and debugging issues)
  * Add image management features into the builder instead of having to manage out-of-band with orka cli (eg: delete image)
  * Migrate to the (as of yet) undocumented Orka API.  Maybe MacStadium will help and provide me some documentation?  This will simplify the code greatly, and remove the reliance on the Orka CLI to be pre-installed and pre-configured.  Although, arguably this may make this more complicated because then you need to specify the API Key/Token/Account information into this plugin.
- * Clean up / improve code / catch more sharp edges and edge-cases
+ * Clean up / improve code / catch more sharp edges and edge-cases, deal with any issues filed on Github.
 
 ## Original Author / License
 
 **Please Note:** I am not associated with, affiliated, or tied to MacStadium in any way.  They did not endorse the creation or support of this plugin.  This software was written as a personal open-source contribution to the community.  If you create work based on this work, please attribute that your work was based on mine.
 
-* Written by [Farley Farley] ( farley _at_ neonsurge *dot* com )
+This plugin is "very-loosely" based on and took inspiration from the [Packer Null Builder], [Packer LXD Builder], and the [Packer Builder Veertu Anka].
+
+* Written by [Farley Farley] ( farley _at_ neonsurge **dawt** com )
 * License Terms: [GNU GPL v3]
 
 
