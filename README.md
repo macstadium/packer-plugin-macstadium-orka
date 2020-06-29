@@ -136,9 +136,9 @@ These are a list of things that are pending to accomplish within' this repo.  Co
 
 ## Original Author / License
 
-**Please Note:** I am not associated with, affiliated, or tied to MacStadium in any way.  They did not endorse the creation or support of this plugin.  This software was written as a personal open-source contribution to the community.  If you create work based on this work, please attribute that your work was based on mine.
+**Please Note:** I am not associated with, affiliated, or tied to MacStadium in any way other than being a fan of their service.  They did not endorse the creation or support of this plugin (yet).  This software was written as a personal open-source contribution to the community.  If you create work based on this work, please attribute that in your code.
 
-This plugin is "very-loosely" based on and took inspiration from the [Packer Null Builder], [Packer LXD Builder], and the [Packer Builder Veertu Anka].
+This plugin is "very-loosely" based-on and took inspiration from the [Packer Null Builder], [Packer LXD Builder], and the [Packer Builder Veertu Anka].
 
 * Written by [Farley Farley] ( farley _at_ neonsurge **dawt** com )
 * License Terms: [GNU GPL v3]
