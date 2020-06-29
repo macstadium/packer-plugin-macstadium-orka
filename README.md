@@ -97,12 +97,14 @@ orka vm deploy -v macos-catalina-10-15-5 --vnc -y
 orka image save -v <vmid-here-from-orka-vm-list> -b <destination-image-name> -y
 
 # Stop and remove a VM
-orka vm delete --vm base-image-catalina -y
+orka vm delete --vm <vmid-here-from-orka-vm-list> -y
 
-# Once you're done working with an image and want to delete
+# Later to launch future images with this image create a new config to launch...
+orka vm create-config -v my-new-packerified-vm -c 3 --C 3 --vnc --base-image <destination-image-name> -y
+# And launch it...
+orka vm deploy -v my-new-packerified-vm --vnc -y
+# Or, alternatively if you're done working with an image and want to delete it...
 orka image delete --image <destination-image-name> -y
-
-# Or alternatively, use that image in a future config (orka vm create-config) to launch future VMs based on that image
 ```
 
 ## Changelog / History
