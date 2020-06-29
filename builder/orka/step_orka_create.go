@@ -138,7 +138,10 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	//            potentially could lead to this plugin shutting down one of your VMs
 	//            that you didn't intend.  I'm not 100% sure how to fix this, other than
 	//            just recommending that you create a new launch config any time for your
-	//            automation, and only use it for your automation.
+	//            automation, and only use it for your automation.  This MAY be fixable when
+	//            I switch over to use the Orka API directly instead of their CLI utility 
+	//            assuming that their API has more information than their CLI tool does 
+	//            (eg: via vmid immediately returned on vm creation response)
   for _, value := range topLevelJson {
 		isInHere = false
     // log.Printf("Character %d of toplevel is = %s\n", index, value)
