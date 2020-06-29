@@ -214,18 +214,16 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	
 	ui.Say("Removing old VM: " + vmid)
 
-	// results, err := RunCommand( 
-	// 		"orka","vm","delete",
-	// 		"--vm",vmid,
-	// 		"-y")
 	results, err := RunCommand( 
-			"echo","test",vmid)
+			"orka","vm","delete",
+			"--vm",vmid,
+			"-y")
 	
 	if err != nil {
 		myerr := fmt.Errorf("Error while destroying VM: %s\n%s", err, results)
 		state.Put("error", err)
 		ui.Error(myerr.Error())
 	} else {
-		ui.Say("Cleanup: " + results)
+		ui.Say("Removing old VM Complete")
 	}
 }

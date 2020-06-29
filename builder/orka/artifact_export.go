@@ -6,7 +6,7 @@ import (
 
 // Artifact represents an Orka image as the result of a Packer build.
 type Artifact struct {
-	vmId   string
+	imageId string
 }
 
 // BuilderId returns the builder Id.
@@ -28,7 +28,7 @@ func (*Artifact) Files() []string {
 
 // Id returns the VM UUID.
 func (self *Artifact) Id() string {
-	return self.vmId
+	return self.imageId
 }
 
 func (self *Artifact) State(name string) interface{} {
@@ -37,5 +37,5 @@ func (self *Artifact) State(name string) interface{} {
 
 // String returns the string representation of the artifact.
 func (self *Artifact) String() string {
-	return self.vmId
+	return self.imageId
 }

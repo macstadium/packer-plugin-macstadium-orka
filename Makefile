@@ -28,5 +28,7 @@ packer-build-example-non-debug:
 
 fresh: clean build install packer-build-example
 
+rebuild: clean build install
+
 clean:
 	rm -f $(BIN)

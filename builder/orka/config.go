@@ -32,6 +32,8 @@ type Config struct {
 	ImageName string `mapstructure:"image_name" required:"false"`
 	// Simulate create, for interanl dev/testing
 	SimulateCreate bool `mapstructure:"simulate_create"`
+	// Do not image after completion, for some manual testing, for internal dev/testing
+	DoNotImage bool `mapstructure:"do_not_image"`
 	// Do not delete after completion, for some manual testing, for internal dev/testing
 	DoNotDelete bool `mapstructure:"do_not_delete"`
 

@@ -2,6 +2,7 @@ package orka
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/packer/helper/multistep"
 	"github.com/hashicorp/packer/packer"
 )
@@ -17,7 +18,13 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 	ui.Say("Creating image for VM: " + vmid)
 	ui.Say("Name of image being created: " + config.ImageName)
-	ui.Say("Please wait, this can take 1-5 minutes...")
+	
+	if config.DoNotImage {
+		ui.Say("We are skipping to image the VM because of do_not_image being set")
+		return multistep.ActionContinue
+	}
+	
+	ui.Say("Please wait, this can take a few minutes...")
 	
 	result, err := RunCommand( 
 			"orka","image","save",
@@ -25,12 +32,13 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 			"-b",config.ImageName,
 			"-y")
 		
-  if err != nil {
-      ui.Error(err.Error())
-      return multistep.ActionHalt
-  }
-	
-	ui.Say(result)
+	// Check for errors
+	if err != nil {
+		myerr := fmt.Errorf("Error while creating image: %s\n%s", err, result)
+		state.Put("error", myerr)
+		ui.Error(myerr.Error())
+		return multistep.ActionHalt
+	}
 
 	s.imageID = vmid
 

@@ -80,6 +80,6 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 
 	// No errors, must've worked
 	return &Artifact{
-		vmId:   vmid,
+		imageId: b.config.ImageName,
 	}, nil
 }

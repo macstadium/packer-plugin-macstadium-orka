@@ -18,6 +18,7 @@
     "source_image": "{{user `source_image`}}",
     "image_name": "{{user `destination_image_name_prefix`}}-{{user `source_image`}}-{{timestamp}}",
     "simulate_create": false,
+    "do_not_image": false,
     "do_not_delete": false
   }]
 }
