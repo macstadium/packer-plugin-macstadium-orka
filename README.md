@@ -97,7 +97,9 @@ orka image delete --image <destination-image-name> -y
 
 ## Changelog / History
 
-[1.0.0] - Initial Release, basic functionality wrapper around Orka CLI
+ * [1.0.0] - Initial Public Release
+   * Basic functionality wrapper around Orka CLI
+   * Setup Github Action to automatically build and release
 
 ## Development / Bugs / Support
 
