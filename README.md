@@ -136,6 +136,7 @@ These are a list of things that are pending to accomplish within' this repo.  Co
  * Random thought related to the immediate above feature, maybe this plugin to be able to scan configs and/or images available and automatically use the first one it finds, possibly creating a new config specifically for the image?  If it'd make it easier?  I would need to explore and discuss this with some other users if this would be useful and how best to do it.
  * Improve the JSON parsing code.  JSON parsing in Golang is quite messy, and I'm not particularly good at it yet, so the code for parsing it is very messy.  See: line 137-176 of [builder/orka/step_orka_create.go](./builder/orka/step_orka_create.go) and look at the function `ExtractIPHost` in that file as well.  Could be much improved and hopefully simplified.  Contributors welcome!!!
  * Clean up / improve code / catch more sharp edges and edge-cases, deal with any issues filed on Github.
+ * One day, get this merged upstream into Packer as an official builder
 
 ## Original Author / License
 
