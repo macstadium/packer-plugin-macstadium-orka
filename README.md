@@ -17,18 +17,18 @@ For this plugin to function you need to have at least Packer 1.6.0 installed and
 2. Install [Orka CLI](https://orkadocs.macstadium.com/docs/downloads)
 3. Setup Orka CLI - See: [Orka Setup Guide]
 3. Download the [Latest Release] of this plugin.
-4. Move the downloaded binary to a location where [Packer] will detect them at run-time, such as any of the following:
+4. Rename the binary to `packer-builder-macstadium-orka`, then move it to a location where [Packer] will detect them at run-time, such as any of the following:
     * The directory where the [packer] binary is.
     * The `~/.packer.d/plugins` directory.
     * The current working directory.
 5. Ensure that you make this downloaded file executable and that it runs on your machine.  For OS-X you may need to remove a the quarantine bit with the following...
 ```bash
 # On every Unix-ey OS you'll need to chmod it
-chmod a+x ~/.packer.d/plugins/macstadium-orka-darwin-10.6-amd64
+chmod a+x ~/.packer.d/plugins/packer-builder-macstadium-orka
 # On Macs because of a security system in place, you will need to un-quarantine it
-xattr -d ~/.packer.d/plugins/com.apple.quarantine macstadium-orka-darwin-10.6-amd64
+xattr -d ~/.packer.d/plugins/com.apple.quarantine packer-builder-macstadium-orka
 # If you try to run it on every os it should work but report that you shouldn't run plugins directly
-~/.packer.d/plugins/com.apple.quarantine macstadium-orka-darwin-10.6-amd64
+~/.packer.d/plugins/com.apple.quarantine packer-builder-macstadium-orka
 panic: Please do not execute plugins directly. Packer will execute these for you.
 ```
 6. Change to a directory where you have [packer] templates, and packer run as usual, but using the `macstadium-orka` as the builder, per the example below.
