@@ -1,209 +1,202 @@
 package orka
 
 import (
+	"bytes"
 	"context"
-	"fmt"
 	"encoding/json"
-	// "log"
-	// "os"
-	"strings"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strconv"
-	"errors"
 
 	"github.com/hashicorp/packer/helper/multistep"
 	"github.com/hashicorp/packer/packer"
 )
 
-type stepOrkaCreate struct{}
-
-// TODO: This string parsing/extraction logic seems solid, but could probably be simplified.
-//       although effort here seems useless because I'm hoping MacStadium makes their Orka
-//       CLI support JSON ouptut for all commands soon, so we can just centralize on JSON
-func ExtractIPHost(output string) (string, int, error) {
-	// log.Println("ExtractIPHost: " + output)
-
-	// Split into fields by whitespace
-	myfields := strings.Fields(output);
-	// log.Println("Fields")
-	// log.Println(myfields[4])
-
-	// Predefine variables (pre-typed) for below
-	ip := ""
-	port := 0
-	status := "invalid"
-
-  for _, value := range myfields {
-  // for index, value := range myfields {
-    // log.Printf("Character %d of GoT is = %s\n", index, value)
-
-		// If we're at our IP
-		if status == "ip" {
-			ip = value
-			status = "invalid"
-			continue
-		}
-		// If we're at our port
-		if status == "port" {
-			// Convert to int
-			portinteger, err := strconv.Atoi(value)
-			port = portinteger
-			if err != nil {
-				err := fmt.Errorf("Error converting port to int: %s", err)
-				return "", 0, err
-			}
-			status = "invalid"
-			continue
-		}
-		// From the tokenization, see if the next record is IP or port (for ssh)
-		if value == "IP:" {
-			status = "ip"
-		}
-		if value == "SSH:" {
-			status = "port"
-		}
-  }
-
-	// log.Println("extracted ip: " + ip)	
-	// log.Println("extracted port: ")
-	// log.Println(port)
-	
-	if ip == "" || port == 0 { 
-		err := fmt.Errorf("Error was unable to parse out IP or Port")
-		return "", 0, err
-	}
-
-	// Return pre-typed variables ready to go
-	return ip, port, nil
+type TokenLoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-// Run our VM
+type TokenLoginResponse struct {
+	Message string               `json:"message"`
+	Token   string               `json:"token"`
+	Errors  []OrkaResponseErrors `json:"errors"`
+}
+
+type OrkaResponseErrors struct {
+	Message string `json:"message"`
+}
+
+type VirtualMachineCreateRequest struct {
+	OrkaVMName  string `json:"orka_vm_name"`
+	OrkaVMImage string `json:"orka_base_image"`
+	OrkaImage   string `json:"orka_image"`
+	OrkaCPUCore int    `json:"orka_cpu_core"`
+	VCPUCount   int    `json:"vcpu_count"`
+}
+
+type VirtualMachineCreateResponse struct {
+	Message string               `json:"message"`
+	Errors  []OrkaResponseErrors `json:"errors"`
+}
+
+type VirtualMachineDeployRequest struct {
+	OrkaVMName string `json:"orka_vm_name"`
+}
+
+type VirtualMachineDeployResponse struct {
+	VMId    string `json:"vm_id"`
+	IP      string `json:"ip"`
+	SSHPort string `json:"ssh_port"`
+}
+
+type VirtualMachineDeleteRequest struct {
+	OrkaVMName string `json:"orka_vm_name"`
+}
+
+type stepOrkaCreate struct {
+	failed bool
+}
+
+func orkaToken(endpoint string, user string, password string) (string, error) {
+	client := &http.Client{}
+
+	reqData := TokenLoginRequest{user, password}
+	reqDataJSON, _ := json.Marshal(reqData)
+	req, err := http.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("%s/%s", endpoint, "token"),
+		bytes.NewBuffer(reqDataJSON),
+	)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+
+	if err != nil {
+		e := fmt.Errorf("Error while logging into the Orka API")
+		return "", e
+	}
+
+	defer resp.Body.Close()
+
+	var orkaToken TokenLoginResponse
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(bodyBytes, &orkaToken)
+
+	return orkaToken.Token, nil
+}
+
+// Run
 func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
 
+	ui.Say("Logging into Orka API endpoint.")
 
-	source_image := config.SourceImage
-	ui.Say("Creating VM based on: " + source_image + " ...")
-	
-	err := errors.New("test")
-	results := ""
-	
-	// Run our command to create an VM on Orka, simulated if necessary
-	if config.SimulateCreate {
-		ui.Say("Simulating create...")
-		results = string(` orka vm deploy
+	token, err := orkaToken(config.OrkaEndpoint, config.OrkaUser, config.OrkaPassword)
 
-                 VM name: macos-catalina-10-15-5 Successfully deployed VM
-    Node name (optional):                         Connection Info
-                Replicas: 1                        IP: 10.221.188.11
-            [Attach ISO]:                         Ports
-         [Attached disk]:                          VNC: 6000
-       VNC Console (Y/n):                          SSH: 8823
-                                                   Screen Sharing: 5901`);
-		err = nil
-	} else {
-			// ui.Say("Actually creating VM...")
-			results, err = RunCommand( 
-					"orka","vm","deploy",
-					"-v",source_image,
-					"--vnc",
-					"-y")
-	}
-
-	// Check for errors
 	if err != nil {
-		myerr := fmt.Errorf("Error while creating VM: %s\n%s", err, results)
+		ui.Error(fmt.Errorf("API login failed: %s", err).Error())
 		state.Put("error", err)
-		ui.Error(myerr.Error())
-		return multistep.ActionHalt
-	}
-	
-	// Grab our source image
-	ui.Say("Looking up VMID...")
-	jsonString, _ := RunCommand(
-		"orka","vm","list","--json")
-		
-	// TODO: This whole JSON parsing below is just a mess, it's a mess in general
-	//       with golang.  If anyone wants to improve this please do it.
-	var jsonMap map[string]interface{}
-	json.Unmarshal([]byte(jsonString), &jsonMap)
-	topLevelJson := jsonMap["virtual_machine_resources"].([]interface {})
-	
-	isInHere := false
-	wasInHere := false
-
-	// Search for a VM Name the same as our image (how Orka works)
-	// NOTE/TODO: There is a sort-of bug in the logic here below, that it will
-	//            detect all VMs that were launched from the same launch config.  This
-	//            potentially could lead to this plugin shutting down one of your VMs
-	//            that you didn't intend.  I'm not 100% sure how to fix this, other than
-	//            just recommending that you create a new launch config any time for your
-	//            automation, and only use it for your automation.  This MAY be fixable when
-	//            I switch over to use the Orka API directly instead of their CLI utility 
-	//            assuming that their API has more information than their CLI tool does 
-	//            (eg: via vmid immediately returned on vm creation response)
-  for _, value := range topLevelJson {
-		isInHere = false
-    // log.Printf("Character %d of toplevel is = %s\n", index, value)
-		myval := value.(map[string]interface{})
-		// First, check if it's in here
-	  for subindex, subvalue := range myval {
-			if string(subindex) == "virtual_machine_name" {
-				// log.Printf("Found VM Name")
-				// log.Printf(subvalue.(string))
-				if subvalue.(string) == source_image {
-					// log.Printf("This is a valid image")
-					isInHere = true
-				}
-			// } else {
-			// 	log.Printf("Found Subindex: " + string(subindex))
-			}
-		}
-		
-		if isInHere {
-		  for subindex, subvalue := range myval {
-				if string(subindex) == "status" && isInHere == true {
-					// log.Printf("Found VM Status")
-					for _, statusvalue := range subvalue.([]interface{}) {
-				    // log.Printf("Index %d of status value is = %s\n", statusindex, statusvalue)
-						mystatusval := statusvalue.(map[string]interface{})
-						for substatusindex, substatusvalue := range mystatusval {
-							if string(substatusindex) == "virtual_machine_id" {
-								vmid := string(substatusvalue.(string))
-								ui.Say("Launched VM: " + vmid)
-								state.Put("vmid", vmid)
-								wasInHere = true
-							}
-					    // log.Printf("Index %d of substatus value is = %s\n", substatusindex, substatusvalue)
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	// Incase we were unable to get vmid
-	if wasInHere == false {
-		myerr := fmt.Errorf("Error while looking up vmid, unable to find it")
-		state.Put("error", err)
-		ui.Error(myerr.Error())
+		s.failed = true
 		return multistep.ActionHalt
 	}
 
-	// Extract the IP/Port from the string
-	ip, port, err := ExtractIPHost(results)
+	ui.Say("Logged in with token.")
+
+	// Store the token in the data bag for cleanup later.
+	// I am not sure how long these tokens actually last in Orka by default, but I would
+	// assume as the build doesn't take hours and hours, it should still be valid by then.
+	state.Put("orkaToken", token)
+
+	// HTTP Client.
+	client := &http.Client{}
+
+	// Create the builder VM from a pre-existing base-image (required).
+	ui.Say(fmt.Sprintf("Creating a temporary VM configuration for packer: %s", config.OrkaVMBuilderName))
+	ui.Say(fmt.Sprintf("Temporary VM configuration is using base image: %s", config.SourceImage))
+
+	createReqData := VirtualMachineCreateRequest{
+		OrkaVMName:  config.OrkaVMBuilderName,
+		OrkaVMImage: config.SourceImage,
+		OrkaImage:   config.OrkaVMBuilderName,
+		OrkaCPUCore: 3,
+		VCPUCount:   3,
+	}
+	createReqDataJSON, _ := json.Marshal(createReqData)
+	createReq, err := http.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/create"),
+		bytes.NewBuffer(createReqDataJSON),
+	)
+	createReq.Header.Set("Content-Type", "application/json")
+	createReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	createResp, err := client.Do(createReq)
+
 	if err != nil {
 		state.Put("error", err)
-		ui.Error(err.Error())
+		s.failed = true
 		return multistep.ActionHalt
 	}
-	
-	ui.Say("Server Available At: " + ip + ":" + strconv.Itoa(port))
 
-	// Write to our state databag for pick-up by the ssh communicator
-	state.Put("ssh_port", port)
-	state.Put("ssh_host", ip)
-	
+	defer createResp.Body.Close()
+
+	var createdOrkaVM VirtualMachineCreateResponse
+	createRespBodyBytes, _ := ioutil.ReadAll(createResp.Body)
+	json.Unmarshal(createRespBodyBytes, &createdOrkaVM)
+
+	if createResp.StatusCode != 201 {
+		state.Put("error", fmt.Errorf("Error from API while creating Orka VM: %s", createResp.Status))
+		s.failed = true
+		return multistep.ActionHalt
+	}
+
+	ui.Say(fmt.Sprintf("Created temporary VM configuration with message: %s", createdOrkaVM.Message))
+
+	// If that succeeds, let's create a VM based on it, in order to build/pack.
+	ui.Say(fmt.Sprintf("Creating temporary VM based on: %s", config.OrkaVMBuilderName))
+
+	deployReqData := VirtualMachineDeployRequest{config.OrkaVMBuilderName}
+	deployReqDataJSON, _ := json.Marshal(deployReqData)
+	deployReq, err := http.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/deploy"),
+		bytes.NewBuffer(deployReqDataJSON),
+	)
+	deployReq.Header.Set("Content-Type", "application/json")
+	deployReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	deployResp, err := client.Do(deployReq)
+
+	if err != nil {
+		state.Put("error", err)
+		s.failed = true
+		return multistep.ActionHalt
+	}
+
+	defer deployResp.Body.Close()
+
+	var deployedOrkaVM VirtualMachineDeployResponse
+	deployRespBodyBytes, _ := ioutil.ReadAll(deployResp.Body)
+	json.Unmarshal(deployRespBodyBytes, &deployedOrkaVM)
+
+	if deployResp.StatusCode != 200 {
+		state.Put("error", fmt.Errorf("Error from API while deploying Orka VM: %s", deployResp.Status))
+		s.failed = true
+		return multistep.ActionHalt
+	}
+
+	// Write the VM ID to our state databag for cleanup later.
+	state.Put("vmid", deployedOrkaVM.VMId)
+
+	ui.Say(fmt.Sprintf("Created VM with ID: %s", deployedOrkaVM.VMId))
+	ui.Say(fmt.Sprintf("Server available at: %s:%s", deployedOrkaVM.IP, deployedOrkaVM.SSHPort))
+
+	// Write to our state databag for pick-up by the ssh communicator.
+	sshPort, _ := strconv.Atoi(deployedOrkaVM.SSHPort)
+
+	state.Put("ssh_port", sshPort)
+	state.Put("ssh_host", deployedOrkaVM.IP)
+
 	// Continue processing
 	return multistep.ActionContinue
 }
@@ -211,26 +204,45 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
-	
-	vmid := state.Get("vmid").(string)
 
-	if config.DoNotDelete {
-		ui.Say("We are skipping to delete the VM because of do_not_delete being set")
+	if s.failed {
+		ui.Say("There is nothing to clean up since the VM creation and deployment failed.")
 		return
 	}
-	
-	ui.Say("Removing old VM: " + vmid)
 
-	results, err := RunCommand( 
-			"orka","vm","delete",
-			"--vm",vmid,
-			"-y")
-	
+	vmid := state.Get("vmid").(string)
+	token := state.Get("orkaToken").(string)
+
+	if config.DoNotDelete {
+		ui.Say("We are skipping the deletion of the temporary VM and its configuration because of do_not_delete being set.")
+		return
+	}
+
+	ui.Say(fmt.Sprintf("Removing temporary VM and its configuration: %s, %s", vmid, config.OrkaVMBuilderName))
+
+	client := &http.Client{}
+	deleteReqData := VirtualMachineDeleteRequest{config.OrkaVMBuilderName}
+	deleteReqDataJSON, _ := json.Marshal(deleteReqData)
+	deleteReq, err := http.NewRequest(
+		http.MethodDelete,
+		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/purge"),
+		bytes.NewBuffer(deleteReqDataJSON),
+	)
+	deleteReq.Header.Set("Content-Type", "application/json")
+	deleteReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	deleteResp, err := client.Do(deleteReq)
+
 	if err != nil {
-		myerr := fmt.Errorf("Error while destroying VM: %s\n%s", err, results)
+		e := fmt.Errorf("Error while cleaning up and deleting Orka VM")
 		state.Put("error", err)
-		ui.Error(myerr.Error())
+		ui.Error(e.Error())
+	}
+
+	defer deleteResp.Body.Close()
+
+	if deleteResp.StatusCode != 200 {
+		ui.Say("VM was not deleted due to API status code: " + deleteResp.Status)
 	} else {
-		ui.Say("Removing old VM Complete")
+		ui.Say("VM deleted.")
 	}
 }

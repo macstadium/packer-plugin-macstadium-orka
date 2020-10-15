@@ -1,7 +1,10 @@
 {
   "variables": {
-    "source_image": "macos-catalina-10-15-5",
-    "destination_image_name_prefix": "packer"
+    "SOURCE_IMAGE": "macos-catalina-10-15-7-base-v1.img",
+    "DESTINATION_IMAGE_NAME_PREFIX": "packer",
+    "ORKA_ENDPOINT": "{{env `ORKA_ENDPOINT`}}",
+    "ORKA_USER": "{{env `ORKA_USER`}}",
+    "ORKA_PASSWORD": "{{env `ORKA_PASSWORD`}}"
   },
   "provisioners": [
     {
@@ -13,12 +16,17 @@
       ]
     }
   ],
-  "builders": [{
-    "type": "macstadium-orka",
-    "source_image": "{{user `source_image`}}",
-    "image_name": "{{user `destination_image_name_prefix`}}-{{user `source_image`}}-{{timestamp}}",
-    "simulate_create": false,
-    "do_not_image": false,
-    "do_not_delete": false
-  }]
+  "builders": [
+    {
+      "type": "macstadium-orka",
+      "source_image": "{{user `SOURCE_IMAGE`}}",
+      "image_name": "{{user `DESTINATION_IMAGE_NAME_PREFIX`}}-{{user `SOURCE_IMAGE`}}-{{timestamp}}.img",
+      "orka_endpoint": "{{user `ORKA_ENDPOINT`}}",
+      "orka_user": "{{user `ORKA_USER`}}",
+      "orka_password": "{{user `ORKA_PASSWORD`}}",
+      "simulate_create": false,
+      "do_not_image": false,
+      "do_not_delete": false
+    }
+  ]
 }

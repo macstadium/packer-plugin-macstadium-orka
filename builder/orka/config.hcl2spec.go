@@ -56,6 +56,11 @@ type FlatConfig struct {
 	WinRMUseSSL               *bool             `mapstructure:"winrm_use_ssl" cty:"winrm_use_ssl"`
 	WinRMInsecure             *bool             `mapstructure:"winrm_insecure" cty:"winrm_insecure"`
 	WinRMUseNTLM              *bool             `mapstructure:"winrm_use_ntlm" cty:"winrm_use_ntlm"`
+	OrkaEndpoint              *string           `mapstructure:"orka_endpoint" required:"true" cty:"orka_endpoint"`
+	OrkaUser                  *string           `mapstructure:"orka_user" required:"true" cty:"orka_user"`
+	OrkaPassword              *string           `mapstructure:"orka_password" required:"true" cty:"orka_password"`
+	OrkaVMBuilderPrefix       *string           `mapstructure:"orka_vm_builder_prefix" cty:"orka_vm_builder_prefix"`
+	OrkaVMBuilderName         *string           `mapstructure:"orka_vm_builder_name" cty:"orka_vm_builder_name"`
 	SourceImage               *string           `mapstructure:"source_image" required:"true" cty:"source_image"`
 	ImageName                 *string           `mapstructure:"image_name" required:"false" cty:"image_name"`
 	SimulateCreate            *bool             `mapstructure:"simulate_create" cty:"simulate_create"`
@@ -122,6 +127,11 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"winrm_use_ssl":                &hcldec.AttrSpec{Name: "winrm_use_ssl", Type: cty.Bool, Required: false},
 		"winrm_insecure":               &hcldec.AttrSpec{Name: "winrm_insecure", Type: cty.Bool, Required: false},
 		"winrm_use_ntlm":               &hcldec.AttrSpec{Name: "winrm_use_ntlm", Type: cty.Bool, Required: false},
+		"orka_endpoint":                &hcldec.AttrSpec{Name: "orka_endpoint", Type: cty.String, Required: false},
+		"orka_user":                    &hcldec.AttrSpec{Name: "orka_user", Type: cty.String, Required: false},
+		"orka_password":                &hcldec.AttrSpec{Name: "orka_password", Type: cty.String, Required: false},
+		"orka_vm_builder_prefix":       &hcldec.AttrSpec{Name: "orka_vm_builder_prefix", Type: cty.String, Required: false},
+		"orka_vm_builder_name":         &hcldec.AttrSpec{Name: "orka_vm_builder_name", Type: cty.String, Required: false},
 		"source_image":                 &hcldec.AttrSpec{Name: "source_image", Type: cty.String, Required: false},
 		"image_name":                   &hcldec.AttrSpec{Name: "image_name", Type: cty.String, Required: false},
 		"simulate_create":              &hcldec.AttrSpec{Name: "simulate_create", Type: cty.Bool, Required: false},
