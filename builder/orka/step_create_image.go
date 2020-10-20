@@ -13,42 +13,8 @@ import (
 	"github.com/hashicorp/packer/packer"
 )
 
-type ImageCommitRequest struct {
-	OrkaVMName string `json:"orka_vm_name"`
-}
-
-type ImageCommitResponse struct {
-	Message string `json:"message"`
-}
-
-type ImageSaveRequest struct {
-	OrkaVMName string `json:"orka_vm_name"`
-	NewName    string `json:"new_name"`
-}
-
-type ImageSaveResponse struct {
-	Message string `json:"message"`
-}
-
-type VMStartRequest struct {
-	OrkaVMName string `json:"orka_vm_name"`
-}
-
-type VMStartResponse struct {
-	Message string `json:"message"`
-}
-
-type VMStopRequest struct {
-	OrkaVMName string `json:"orka_vm_name"`
-}
-
-type VMStopResponse struct {
-	Message string `json:"message"`
-}
-
 type stepCreateImage struct {
-	imageID string
-	failed  bool
+	failed bool
 }
 
 func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
@@ -128,10 +94,12 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	imageCommitRequest.Header.Set("Content-Type", "application/json")
 	imageCommitRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	imageCommitResponse, err := client.Do(imageCommitRequest)
+
 	if err != nil {
 		ui.Error(fmt.Errorf("Error while comitting image: %s", err).Error())
 		return multistep.ActionHalt
 	}
+
 	var imageCommitResponseData ImageCommitResponse
 	imageCommitResponseBytes, _ := ioutil.ReadAll(imageCommitResponse.Body)
 	json.Unmarshal(imageCommitResponseBytes, &imageCommitResponseData)
@@ -144,15 +112,14 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		ui.Say(fmt.Sprintf("Image comitted, response was: %s", imageCommitResponseData.Message))
 	}
 
-	s.imageID = vmid
-
 	return multistep.ActionContinue
 }
 
 func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
 	ui := state.Get("ui").(packer.Ui)
+	vmid := state.Get("vmid").(string)
 
-	if s.imageID == "" {
+	if vmid == "" {
 		return
 	}
 
@@ -163,11 +130,5 @@ func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
 		return
 	}
 
-	ui.Say("We should maybe delete the image here...?")
-
-	// _, err := client.ImageApi.ImageDelete(context.TODO(), s.imageID)
-	// if err != nil {
-	// 	ui.Error(fmt.Sprintf("error deleting image '%s' - consider deleting it manually: %s",
-	// 		s.imageID, formatOpenAPIError(err)))
-	// }
+	ui.Say("Image cleanup complete.")
 }

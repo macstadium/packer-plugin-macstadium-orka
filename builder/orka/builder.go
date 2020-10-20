@@ -25,6 +25,7 @@ func (b *Builder) ConfigSpec() hcldec.ObjectSpec { return b.config.FlatMapstruct
 // Prepare ...
 func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 	warnings, errs := b.config.Prepare(raws...)
+
 	if errs != nil {
 		return nil, warnings, errs
 	}
@@ -32,7 +33,6 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 	return nil, warnings, nil
 }
 
-// Run ...
 func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (packer.Artifact, error) {
 	// Setup the state bag and initial state for the steps.
 	state := new(multistep.BasicStateBag)
@@ -46,7 +46,8 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 	}
 
 	// Add our SSH Communicator after our steps.
-	steps = append(steps,
+	steps = append(
+		steps,
 		&communicator.StepConnect{
 			Config:    &b.config.CommConfig,
 			Host:      CommHost(b.config.CommConfig.Host()),
@@ -56,7 +57,8 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 	)
 
 	// Add the typical common provisioner after that, then our create image.
-	steps = append(steps,
+	steps = append(
+		steps,
 		new(common.StepProvision),
 		new(stepCreateImage))
 

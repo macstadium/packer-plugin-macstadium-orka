@@ -13,70 +13,23 @@ import (
 	"github.com/hashicorp/packer/packer"
 )
 
-type OrkaResponseErrors struct {
-	Message string `json:"message"`
-}
-
-type TokenLoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type TokenLoginResponse struct {
-	Message string               `json:"message"`
-	Token   string               `json:"token"`
-	Errors  []OrkaResponseErrors `json:"errors"`
-}
-
-type ImageCopyRequest struct {
-	Image   string `json:"image"`
-	NewName string `json:"new_name"`
-}
-
-type ImageCopyResponse struct {
-	Message string               `json:"message"`
-	Errors  []OrkaResponseErrors `json:"errors"`
-}
-
-type VMCreateRequest struct {
-	OrkaVMName  string `json:"orka_vm_name"`
-	OrkaVMImage string `json:"orka_base_image"`
-	OrkaImage   string `json:"orka_image"`
-	OrkaCPUCore int    `json:"orka_cpu_core"`
-	VCPUCount   int    `json:"vcpu_count"`
-}
-
-type VMCreateResponse struct {
-	Message string               `json:"message"`
-	Errors  []OrkaResponseErrors `json:"errors"`
-}
-
-type VMDeployRequest struct {
-	OrkaVMName string `json:"orka_vm_name"`
-}
-
-type VMDeployResponse struct {
-	VMId    string `json:"vm_id"`
-	IP      string `json:"ip"`
-	SSHPort string `json:"ssh_port"`
-}
-
-type VMPurgeRequest struct {
-	OrkaVMName string `json:"orka_vm_name"`
-}
-
 type stepOrkaCreate struct {
 	failed bool
 }
 
-func orkaToken(endpoint string, user string, password string) (string, error) {
+func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, error) {
+	config := state.Get("config").(*Config)
+	user := config.OrkaUser
+	password := config.OrkaPassword
+
+	// HTTP Client.
 	client := &http.Client{}
 
 	reqData := TokenLoginRequest{user, password}
 	reqDataJSON, _ := json.Marshal(reqData)
 	req, err := http.NewRequest(
 		http.MethodPost,
-		fmt.Sprintf("%s/%s", endpoint, "token"),
+		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "token"),
 		bytes.NewBuffer(reqDataJSON),
 	)
 	req.Header.Set("Content-Type", "application/json")
@@ -87,13 +40,12 @@ func orkaToken(endpoint string, user string, password string) (string, error) {
 		return "", e
 	}
 
-	defer resp.Body.Close()
+	var respData TokenLoginResponse
+	respBodyBytes, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(respBodyBytes, &respData)
+	resp.Body.Close()
 
-	var orkaToken TokenLoginResponse
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
-	json.Unmarshal(bodyBytes, &orkaToken)
-
-	return orkaToken.Token, nil
+	return respData.Token, nil
 }
 
 func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
@@ -106,7 +58,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 
 	ui.Say("Logging into Orka API endpoint.")
 
-	token, err := orkaToken(config.OrkaEndpoint, config.OrkaUser, config.OrkaPassword)
+	token, err := s.createOrkaToken(state)
 
 	if err != nil {
 		ui.Error(fmt.Errorf("API login failed: %s", err).Error())
@@ -280,22 +232,62 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	return multistep.ActionContinue
 }
 
+func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) {
+	config := state.Get("config").(*Config)
+	ui := state.Get("ui").(packer.Ui)
+	token := state.Get("token").(string)
+
+	client := &http.Client{}
+
+	imageDeleteRequestData := ImageDeleteRequest{config.OrkaVMBuilderName}
+	imageDeleteRequestDataJSON, _ := json.Marshal(imageDeleteRequestData)
+	imageDeleteRequest, err := http.NewRequest(
+		http.MethodDelete,
+		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/delete"),
+		bytes.NewBuffer(imageDeleteRequestDataJSON),
+	)
+	imageDeleteRequest.Header.Set("Content-Type", "application/json")
+	imageDeleteRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	imageDeleteResponse, err := client.Do(imageDeleteRequest)
+
+	if err != nil {
+		e := fmt.Errorf("Error from API: %s", err)
+		ui.Error(e.Error())
+		state.Put("error", e)
+	}
+
+	if imageDeleteResponse.StatusCode != 200 {
+		e := fmt.Errorf("Error from API: %s", imageDeleteResponse.Status)
+		ui.Error("VM was not purged.")
+		ui.Error(e.Error())
+	} else {
+		ui.Say("VM purged.")
+	}
+
+	imageDeleteResponse.Body.Close()
+}
+
 func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
+	token := state.Get("token").(string)
 
-	if s.failed {
+	if config.DoNotDelete {
+		ui.Say("We are skipping the deletion of the temporary VM and its configuration because of do_not_delete being set.")
+		if !config.DoNotPrecopy {
+			ui.Say(fmt.Sprintf("Pre-copy was performed; image %s will be left and not removed.",
+				config.ImageName))
+		}
+		return
+	} else if s.failed && !config.DoNotPrecopy {
+		ui.Say(fmt.Sprintf("Pre-copy was performed; cleaning up image %s", config.ImageName))
+		s.precopyImageDelete(state)
+	} else if s.failed && config.DoNotPrecopy {
 		ui.Say("There is nothing to clean up since the VM creation and deployment failed.")
 		return
 	}
 
 	vmid := state.Get("vmid").(string)
-	token := state.Get("token").(string)
-
-	if config.DoNotDelete {
-		ui.Say("We are skipping the deletion of the temporary VM and its configuration because of do_not_delete being set.")
-		return
-	}
 
 	ui.Say(fmt.Sprintf("Removing temporary VM and its configuration: %s, %s", vmid, config.OrkaVMBuilderName))
 
