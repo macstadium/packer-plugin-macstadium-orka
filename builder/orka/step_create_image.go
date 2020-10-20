@@ -13,6 +13,14 @@ import (
 	"github.com/hashicorp/packer/packer"
 )
 
+type ImageCommitRequest struct {
+	OrkaVMName string `json:"orka_vm_name"`
+}
+
+type ImageCommitResponse struct {
+	Message string `json:"message"`
+}
+
 type ImageSaveRequest struct {
 	OrkaVMName string `json:"orka_vm_name"`
 	NewName    string `json:"new_name"`
@@ -47,20 +55,22 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
 	vmid := state.Get("vmid").(string)
-	token := state.Get("orkaToken").(string)
+	token := state.Get("token").(string)
 
 	if config.DoNotImage {
-		ui.Say("We are skipping creating an image of the VM because of do_not_image being set.")
+		ui.Say("We are skipping commit image of the VM because of do_not_image being set.")
 		return multistep.ActionContinue
 	}
 
-	ui.Say(fmt.Sprintf("Creating new base image for VM: %s", vmid))
-	ui.Say(fmt.Sprintf("Name of image being created: %s", config.ImageName))
-	ui.Say("First, we must stop and then start (restart) the VM.")
+	// HTTP Client.
 
 	client := &http.Client{
 		Timeout: time.Minute * 5,
 	}
+
+	ui.Say(fmt.Sprintf("Comitting base image for VM: %s", vmid))
+	ui.Say(fmt.Sprintf("Name of image being comitted: %s", config.ImageName))
+	ui.Say("We must stop and then start (restart) the VM first.")
 
 	stopVMRequestData := VMStopRequest{vmid}
 	stopVMRequestDataJSON, _ := json.Marshal(stopVMRequestData)
@@ -71,71 +81,67 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	)
 	vmStopRequest.Header.Set("Content-Type", "application/json")
 	vmStopRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	ui.Say("Stopping and waiting 10 seconds...")
 	vmStopResponse, err := client.Do(vmStopRequest)
-
 	if err != nil {
 		state.Put("error", err)
 		return multistep.ActionHalt
 	}
-
-	defer vmStopResponse.Body.Close()
-
 	var vmStopResponseData VMStopResponse
 	vmStopRespBytes, _ := ioutil.ReadAll(vmStopResponse.Body)
 	json.Unmarshal(vmStopRespBytes, &vmStopResponseData)
+	vmStopResponse.Body.Close()
+	time.Sleep(time.Second * 10)
 
-	startVMRequestData := VMStartRequest{vmid}
-	startVMRequestDataJSON, _ := json.Marshal(startVMRequestData)
-	vmStartRequest, err := http.NewRequest(
-		http.MethodPost,
-		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/start"),
-		bytes.NewBuffer(startVMRequestDataJSON),
-	)
-	vmStartRequest.Header.Set("Content-Type", "application/json")
-	vmStartRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	vmStartResponse, err := client.Do(vmStartRequest)
+	// startVMRequestData := VMStartRequest{vmid}
+	// startVMRequestDataJSON, _ := json.Marshal(startVMRequestData)
+	// vmStartRequest, err := http.NewRequest(
+	// 	http.MethodPost,
+	// 	fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/start"),
+	// 	bytes.NewBuffer(startVMRequestDataJSON),
+	// )
+	// vmStartRequest.Header.Set("Content-Type", "application/json")
+	// vmStartRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	// ui.Say("Starting and waiting 30 seconds...")
+	// vmStartResponse, err := client.Do(vmStartRequest)
+	// if err != nil {
+	// 	ui.Error(fmt.Errorf("Error while starting VM %s: %s", vmid, err).Error())
+	// 	return multistep.ActionHalt
+	// }
+	// var vmStartResponseData VMStartResponse
+	// vmStartResponseBytes, _ := ioutil.ReadAll(vmStartResponse.Body)
+	// json.Unmarshal(vmStartResponseBytes, &vmStartResponseData)
+	// vmStartRequest.Body.Close()
+	// time.Sleep(time.Second * 30)
 
-	if err != nil {
-		ui.Error(fmt.Errorf("Error while starting VM %s: %s", vmid, err).Error())
-		return multistep.ActionHalt
-	}
-
-	defer vmStartRequest.Body.Close()
-
-	var vmStartResponseData VMStartResponse
-	vmStartResponseBytes, _ := ioutil.ReadAll(vmStartResponse.Body)
-	json.Unmarshal(vmStartResponseBytes, &vmStartResponseData)
-
-	// Now that the VM is stopped and restarted, we can re-image it to a new base image.
-	ui.Say("VM restarted; creating image.")
+	// Now that the VM is stopped, we can commit it.
+	ui.Say("VM stopped; comitting image.")
 	ui.Say("Please wait, this can take a little while ...")
 
-	createImageReqData := ImageSaveRequest{vmid, config.ImageName}
-	createImageReqDataJSON, _ := json.Marshal(createImageReqData)
-	createImageReq, err := http.NewRequest(
+	imageCommitRequestData := ImageCommitRequest{vmid}
+	imageCommitRequestDataJSON, _ := json.Marshal(imageCommitRequestData)
+	imageCommitRequest, err := http.NewRequest(
 		http.MethodPost,
-		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/save"),
-		bytes.NewBuffer(createImageReqDataJSON),
+		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/commit"),
+		bytes.NewBuffer(imageCommitRequestDataJSON),
 	)
-	createImageReq.Header.Set("Content-Type", "application/json")
-	createImageReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	createImageResp, err := client.Do(createImageReq)
-
+	imageCommitRequest.Header.Set("Content-Type", "application/json")
+	imageCommitRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	imageCommitResponse, err := client.Do(imageCommitRequest)
 	if err != nil {
-		ui.Error(fmt.Errorf("Error while creating image: %s", err).Error())
+		ui.Error(fmt.Errorf("Error while comitting image: %s", err).Error())
 		return multistep.ActionHalt
 	}
+	var imageCommitResponseData ImageCommitResponse
+	imageCommitResponseBytes, _ := ioutil.ReadAll(imageCommitResponse.Body)
+	json.Unmarshal(imageCommitResponseBytes, &imageCommitResponseData)
+	imageCommitResponse.Body.Close()
 
-	defer createImageResp.Body.Close()
-
-	var imageSaveResponseData ImageSaveResponse
-	createImageRespBytes, _ := ioutil.ReadAll(createImageResp.Body)
-	json.Unmarshal(createImageRespBytes, &imageSaveResponseData)
-
-	if createImageResp.StatusCode != 200 {
-		ui.Error(fmt.Errorf("Image was not created due to API status code: %s", createImageResp.Status).Error())
+	if imageCommitResponse.StatusCode != 200 {
+		e := fmt.Errorf("Error from API: %s", imageCommitResponse.Status)
+		ui.Error(e.Error())
 	} else {
-		ui.Say(fmt.Sprintf("Image created, response was: %s", imageSaveResponseData.Message))
+		ui.Say(fmt.Sprintf("Image comitted, response was: %s", imageCommitResponseData.Message))
 	}
 
 	s.imageID = vmid

@@ -13,6 +13,10 @@ import (
 	"github.com/hashicorp/packer/packer"
 )
 
+type OrkaResponseErrors struct {
+	Message string `json:"message"`
+}
+
 type TokenLoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -24,11 +28,17 @@ type TokenLoginResponse struct {
 	Errors  []OrkaResponseErrors `json:"errors"`
 }
 
-type OrkaResponseErrors struct {
-	Message string `json:"message"`
+type ImageCopyRequest struct {
+	Image   string `json:"image"`
+	NewName string `json:"new_name"`
 }
 
-type VirtualMachineCreateRequest struct {
+type ImageCopyResponse struct {
+	Message string               `json:"message"`
+	Errors  []OrkaResponseErrors `json:"errors"`
+}
+
+type VMCreateRequest struct {
 	OrkaVMName  string `json:"orka_vm_name"`
 	OrkaVMImage string `json:"orka_base_image"`
 	OrkaImage   string `json:"orka_image"`
@@ -36,22 +46,22 @@ type VirtualMachineCreateRequest struct {
 	VCPUCount   int    `json:"vcpu_count"`
 }
 
-type VirtualMachineCreateResponse struct {
+type VMCreateResponse struct {
 	Message string               `json:"message"`
 	Errors  []OrkaResponseErrors `json:"errors"`
 }
 
-type VirtualMachineDeployRequest struct {
+type VMDeployRequest struct {
 	OrkaVMName string `json:"orka_vm_name"`
 }
 
-type VirtualMachineDeployResponse struct {
+type VMDeployResponse struct {
 	VMId    string `json:"vm_id"`
 	IP      string `json:"ip"`
 	SSHPort string `json:"ssh_port"`
 }
 
-type VirtualMachineDeleteRequest struct {
+type VMPurgeRequest struct {
 	OrkaVMName string `json:"orka_vm_name"`
 }
 
@@ -86,10 +96,13 @@ func orkaToken(endpoint string, user string, password string) (string, error) {
 	return orkaToken.Token, nil
 }
 
-// Run
 func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
+
+	// ############################
+	// # ORKA API LOGIN FOR TOKEN #
+	// ############################
 
 	ui.Say("Logging into Orka API endpoint.")
 
@@ -107,95 +120,161 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	// Store the token in the data bag for cleanup later.
 	// I am not sure how long these tokens actually last in Orka by default, but I would
 	// assume as the build doesn't take hours and hours, it should still be valid by then.
-	state.Put("orkaToken", token)
+	state.Put("token", token)
 
 	// HTTP Client.
 	client := &http.Client{}
 
-	// Create the builder VM from a pre-existing base-image (required).
-	ui.Say(fmt.Sprintf("Creating a temporary VM configuration for packer: %s", config.OrkaVMBuilderName))
-	ui.Say(fmt.Sprintf("Temporary VM configuration is using base image: %s", config.SourceImage))
+	var actualImage string
 
-	createReqData := VirtualMachineCreateRequest{
+	// ############################################################
+	// # PRE-COPY SOURCE IMAGE TO NEW IMAGE THAT WILL GET CREATED #
+	// ############################################################
+
+	if !config.DoNotImage || !config.DoNotPrecopy {
+		ui.Say(fmt.Sprintf("Pre-copying source image %s to destination image %s", config.SourceImage, config.ImageName))
+		ui.Say("This can take awhile depending on how big the source image is; please wait ...")
+
+		imageCopyRequestData := ImageCopyRequest{config.SourceImage, config.ImageName}
+		imageCopyRequestDataJSON, _ := json.Marshal(imageCopyRequestData)
+		imageCopyRequest, err := http.NewRequest(
+			http.MethodPost,
+			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/copy"),
+			bytes.NewBuffer(imageCopyRequestDataJSON),
+		)
+		imageCopyRequest.Header.Set("Content-Type", "application/json")
+		imageCopyRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		imageCopyResponse, err := client.Do(imageCopyRequest)
+
+		if err != nil {
+			e := fmt.Errorf("Error from API: %s", err)
+			ui.Error(e.Error())
+			state.Put("error", e)
+			s.failed = true
+			return multistep.ActionHalt
+		}
+
+		var imageCopyResponseData ImageCopyResponse
+		imageCopyResponseBytes, _ := ioutil.ReadAll(imageCopyResponse.Body)
+		json.Unmarshal(imageCopyResponseBytes, &imageCopyResponseData)
+		imageCopyResponse.Body.Close()
+
+		if imageCopyResponse.StatusCode != 200 {
+			e := fmt.Errorf("Error from API: %s", imageCopyResponse.Status)
+			ui.Error(e.Error())
+			state.Put("error", e)
+			s.failed = true
+			return multistep.ActionHalt
+		}
+
+		ui.Say("Image copied.")
+		actualImage = config.ImageName
+	} else {
+		if config.DoNotImage {
+			ui.Say("Skipping source image pre-copy because of do_not_image being set.")
+		} else {
+			ui.Say("Skipping source image pre-copy because of do_not_precopy bieng set.")
+		}
+		actualImage = config.SourceImage
+	}
+
+	// #######################################
+	// # CREATE THE BUILDER VM CONFIGURATION #
+	// #######################################
+
+	// Create the builder VM from a pre-existing base-image (required).
+
+	ui.Say(fmt.Sprintf("Creating a temporary VM configuration: %s",
+		config.OrkaVMBuilderName))
+	ui.Say(fmt.Sprintf("Temporary VM configuration is using new, pre-copied base image: %s",
+		config.ImageName))
+	vmCreateConfigRequestData := VMCreateRequest{
 		OrkaVMName:  config.OrkaVMBuilderName,
-		OrkaVMImage: config.SourceImage,
+		OrkaVMImage: actualImage,
 		OrkaImage:   config.OrkaVMBuilderName,
 		OrkaCPUCore: 3,
 		VCPUCount:   3,
 	}
-	createReqDataJSON, _ := json.Marshal(createReqData)
-	createReq, err := http.NewRequest(
+	vmCreateConfigRequestDataJSON, _ := json.Marshal(vmCreateConfigRequestData)
+	vmCreateConfigRequest, err := http.NewRequest(
 		http.MethodPost,
 		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/create"),
-		bytes.NewBuffer(createReqDataJSON),
+		bytes.NewBuffer(vmCreateConfigRequestDataJSON),
 	)
-	createReq.Header.Set("Content-Type", "application/json")
-	createReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	createResp, err := client.Do(createReq)
+	vmCreateConfigRequest.Header.Set("Content-Type", "application/json")
+	vmCreateConfigRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	vmCreateConfigResponse, err := client.Do(vmCreateConfigRequest)
 
 	if err != nil {
-		state.Put("error", err)
+		ui.Error(fmt.Errorf("Error while creating temporary VM configuration: %s", err).Error())
+		return multistep.ActionHalt
+	}
+
+	var vmCreateConfigResponseData VMCreateResponse
+	vmCreateConfigResponseBytes, _ := ioutil.ReadAll(vmCreateConfigResponse.Body)
+	json.Unmarshal(vmCreateConfigResponseBytes, &vmCreateConfigResponseData)
+	vmCreateConfigResponse.Body.Close()
+
+	if vmCreateConfigResponse.StatusCode != 201 {
+		state.Put("error", fmt.Errorf("Error from API while creating Orka VM: %s",
+			vmCreateConfigResponse.Status).Error())
 		s.failed = true
 		return multistep.ActionHalt
 	}
 
-	defer createResp.Body.Close()
+	ui.Say(fmt.Sprintf("Created temporary VM configuration; message was: %s", vmCreateConfigResponseData.Message))
 
-	var createdOrkaVM VirtualMachineCreateResponse
-	createRespBodyBytes, _ := ioutil.ReadAll(createResp.Body)
-	json.Unmarshal(createRespBodyBytes, &createdOrkaVM)
-
-	if createResp.StatusCode != 201 {
-		state.Put("error", fmt.Errorf("Error from API while creating Orka VM: %s", createResp.Status))
-		s.failed = true
-		return multistep.ActionHalt
-	}
-
-	ui.Say(fmt.Sprintf("Created temporary VM configuration with message: %s", createdOrkaVM.Message))
+	// #################
+	// # DEPLOY THE VM #
+	// #################
 
 	// If that succeeds, let's create a VM based on it, in order to build/pack.
+
 	ui.Say(fmt.Sprintf("Creating temporary VM based on: %s", config.OrkaVMBuilderName))
 
-	deployReqData := VirtualMachineDeployRequest{config.OrkaVMBuilderName}
-	deployReqDataJSON, _ := json.Marshal(deployReqData)
-	deployReq, err := http.NewRequest(
+	vmDeployRequestData := VMDeployRequest{config.OrkaVMBuilderName}
+	vmDeployRequestDataJSON, _ := json.Marshal(vmDeployRequestData)
+	vmDeployRequest, err := http.NewRequest(
 		http.MethodPost,
 		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/deploy"),
-		bytes.NewBuffer(deployReqDataJSON),
+		bytes.NewBuffer(vmDeployRequestDataJSON),
 	)
-	deployReq.Header.Set("Content-Type", "application/json")
-	deployReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	deployResp, err := client.Do(deployReq)
+	vmDeployRequest.Header.Set("Content-Type", "application/json")
+	vmDeployRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	vmDeployResponse, err := client.Do(vmDeployRequest)
+	var vmDeployResponseData VMDeployResponse
+	vmDeployResponseBodyBytes, _ := ioutil.ReadAll(vmDeployResponse.Body)
+	json.Unmarshal(vmDeployResponseBodyBytes, &vmDeployResponseData)
+	vmDeployResponse.Body.Close()
 
-	if err != nil {
-		state.Put("error", err)
+	if vmDeployResponse.StatusCode != 200 {
+		state.Put(
+			"error",
+			fmt.Errorf("Error from API while deploying Orka VM: %s",
+				vmDeployResponse.Status))
 		s.failed = true
 		return multistep.ActionHalt
 	}
 
-	defer deployResp.Body.Close()
-
-	var deployedOrkaVM VirtualMachineDeployResponse
-	deployRespBodyBytes, _ := ioutil.ReadAll(deployResp.Body)
-	json.Unmarshal(deployRespBodyBytes, &deployedOrkaVM)
-
-	if deployResp.StatusCode != 200 {
-		state.Put("error", fmt.Errorf("Error from API while deploying Orka VM: %s", deployResp.Status))
-		s.failed = true
-		return multistep.ActionHalt
-	}
+	// #########################
+	// # STORE VM ID AND STATE #
+	// #########################
 
 	// Write the VM ID to our state databag for cleanup later.
-	state.Put("vmid", deployedOrkaVM.VMId)
 
-	ui.Say(fmt.Sprintf("Created VM with ID: %s", deployedOrkaVM.VMId))
-	ui.Say(fmt.Sprintf("Server available at: %s:%s", deployedOrkaVM.IP, deployedOrkaVM.SSHPort))
+	state.Put("vmid", vmDeployResponseData.VMId)
+
+	ui.Say(fmt.Sprintf("Created VM with ID: %s",
+		vmDeployResponseData.VMId))
+	ui.Say(fmt.Sprintf("Server available at: %s:%s",
+		vmDeployResponseData.IP, vmDeployResponseData.SSHPort))
 
 	// Write to our state databag for pick-up by the ssh communicator.
-	sshPort, _ := strconv.Atoi(deployedOrkaVM.SSHPort)
+
+	sshPort, _ := strconv.Atoi(vmDeployResponseData.SSHPort)
 
 	state.Put("ssh_port", sshPort)
-	state.Put("ssh_host", deployedOrkaVM.IP)
+	state.Put("ssh_host", vmDeployResponseData.IP)
 
 	// Continue processing
 	return multistep.ActionContinue
@@ -211,7 +290,7 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	}
 
 	vmid := state.Get("vmid").(string)
-	token := state.Get("orkaToken").(string)
+	token := state.Get("token").(string)
 
 	if config.DoNotDelete {
 		ui.Say("We are skipping the deletion of the temporary VM and its configuration because of do_not_delete being set.")
@@ -221,28 +300,27 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	ui.Say(fmt.Sprintf("Removing temporary VM and its configuration: %s, %s", vmid, config.OrkaVMBuilderName))
 
 	client := &http.Client{}
-	deleteReqData := VirtualMachineDeleteRequest{config.OrkaVMBuilderName}
-	deleteReqDataJSON, _ := json.Marshal(deleteReqData)
-	deleteReq, err := http.NewRequest(
+	vmPurgeRequestData := VMPurgeRequest{config.OrkaVMBuilderName}
+	vmPurgeRequestDatJSON, _ := json.Marshal(vmPurgeRequestData)
+	vmPurgeRequest, err := http.NewRequest(
 		http.MethodDelete,
 		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/purge"),
-		bytes.NewBuffer(deleteReqDataJSON),
+		bytes.NewBuffer(vmPurgeRequestDatJSON),
 	)
-	deleteReq.Header.Set("Content-Type", "application/json")
-	deleteReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	deleteResp, err := client.Do(deleteReq)
+	vmPurgeRequest.Header.Set("Content-Type", "application/json")
+	vmPurgeRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	vmPurgeResponse, err := client.Do(vmPurgeRequest)
 
 	if err != nil {
-		e := fmt.Errorf("Error while cleaning up and deleting Orka VM")
+		ui.Error(fmt.Errorf("Error while cleaning up, deleting and purging Orka VM").Error())
 		state.Put("error", err)
-		ui.Error(e.Error())
 	}
 
-	defer deleteResp.Body.Close()
-
-	if deleteResp.StatusCode != 200 {
-		ui.Say("VM was not deleted due to API status code: " + deleteResp.Status)
+	if vmPurgeResponse.StatusCode != 200 {
+		ui.Say(fmt.Sprintf("VM was not purged due to API status code: %s", vmPurgeResponse.Status))
 	} else {
-		ui.Say("VM deleted.")
+		ui.Say("VM purged.")
 	}
+
+	vmPurgeResponse.Body.Close()
 }
