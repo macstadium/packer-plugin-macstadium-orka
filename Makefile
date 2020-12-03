@@ -27,7 +27,7 @@ packer-build-example:
 packer-build-example-non-debug:
 	packer build examples/macos-catalina.json
 
-fresh: clean build install packer-build-example
+fresh: clean build install packer-build-example-non-debug
 
 rebuild: clean build install
 

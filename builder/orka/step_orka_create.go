@@ -232,7 +232,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	return multistep.ActionContinue
 }
 
-func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) {
+func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) error {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
 	token := state.Get("token").(string)
@@ -254,17 +254,20 @@ func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) {
 		e := fmt.Errorf("Error from API: %s", err)
 		ui.Error(e.Error())
 		state.Put("error", e)
+		return e
 	}
 
 	if imageDeleteResponse.StatusCode != 200 {
 		e := fmt.Errorf("Error from API: %s", imageDeleteResponse.Status)
 		ui.Error("VM was not purged.")
 		ui.Error(e.Error())
-	} else {
-		ui.Say("VM purged.")
+		return e
 	}
 
+	ui.Say("VM purged.")
 	imageDeleteResponse.Body.Close()
+
+	return nil
 }
 
 func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
@@ -281,7 +284,10 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 		return
 	} else if s.failed && !config.DoNotPrecopy {
 		ui.Say(fmt.Sprintf("Pre-copy was performed; cleaning up image %s", config.ImageName))
-		s.precopyImageDelete(state)
+		precopyDeleteFailed := s.precopyImageDelete(state)
+		if precopyDeleteFailed != nil {
+			return
+		}
 	} else if s.failed && config.DoNotPrecopy {
 		ui.Say("There is nothing to clean up since the VM creation and deployment failed.")
 		return
@@ -313,6 +319,4 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	} else {
 		ui.Say("VM purged.")
 	}
-
-	vmPurgeResponse.Body.Close()
 }
