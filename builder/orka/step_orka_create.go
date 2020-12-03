@@ -120,6 +120,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		}
 
 		ui.Say("Image copied.")
+
 		actualImage = config.ImageName
 	} else {
 		if config.DoNotImage {

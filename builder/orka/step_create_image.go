@@ -121,7 +121,35 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		// By default we use the save endpoint to generate a new base image from
 		// the running VM's current image.
 
-		ui.Say("Saving new image since pre-copy is not being used.")
+		ui.Say("Saving new image.")
+
+		imageSaveRequestData := ImageSaveRequest{vmid, config.ImageName}
+		imageSaveRequestDataJSON, _ := json.Marshal(imageSaveRequestData)
+		imageSaveRequest, err := http.NewRequest(
+			http.MethodPost,
+			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/save"),
+			bytes.NewBuffer(imageSaveRequestDataJSON),
+		)
+		imageSaveRequest.Header.Set("Content-Type", "application/json")
+		imageSaveRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		imageSaveResponse, err := client.Do(imageSaveRequest)
+
+		if err != nil {
+			ui.Error(fmt.Errorf("Error while saving new image: %s", err).Error())
+			return multistep.ActionHalt
+		}
+
+		var imageSaveResponseData ImageSaveResponse
+		imageSaveResponseBytes, _ := ioutil.ReadAll(imageSaveResponse.Body)
+		json.Unmarshal(imageSaveResponseBytes, &imageSaveResponseData)
+		imageSaveResponse.Body.Close()
+
+		if imageSaveResponse.StatusCode != 200 {
+			e := fmt.Errorf("Error from API: %s", imageSaveResponse.Status)
+			ui.Error(e.Error())
+		} else {
+			ui.Say(fmt.Sprintf("Image saved, response was: %s", imageSaveResponseData.Message))
+		}
 	}
 
 	return multistep.ActionContinue
