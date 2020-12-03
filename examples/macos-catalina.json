@@ -26,7 +26,8 @@
       "orka_password": "{{user `ORKA_PASSWORD`}}",
       "simulate_create": false,
       "do_not_image": false,
-      "do_not_delete": false
+      "do_not_delete": false,
+      "image_precopy": false
     }
   ]
 }

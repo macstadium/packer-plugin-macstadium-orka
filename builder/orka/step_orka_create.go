@@ -83,7 +83,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	// # PRE-COPY SOURCE IMAGE TO NEW IMAGE THAT WILL GET CREATED #
 	// ############################################################
 
-	if !config.DoNotImage || !config.DoNotPrecopy {
+	if !config.DoNotImage && config.ImagePrecopy {
 		ui.Say(fmt.Sprintf("Pre-copying source image %s to destination image %s", config.SourceImage, config.ImageName))
 		ui.Say("This can take awhile depending on how big the source image is; please wait ...")
 
@@ -125,7 +125,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		if config.DoNotImage {
 			ui.Say("Skipping source image pre-copy because of do_not_image being set.")
 		} else {
-			ui.Say("Skipping source image pre-copy because of do_not_precopy bieng set.")
+			ui.Say("Skipping source image pre-copy because of  bieng set.")
 		}
 		actualImage = config.SourceImage
 	}
@@ -138,7 +138,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 
 	ui.Say(fmt.Sprintf("Creating a temporary VM configuration: %s",
 		config.OrkaVMBuilderName))
-	ui.Say(fmt.Sprintf("Temporary VM configuration is using new, pre-copied base image: %s",
+	ui.Say(fmt.Sprintf("Temporary VM configuration is using base image: %s",
 		config.ImageName))
 	vmCreateConfigRequestData := VMCreateRequest{
 		OrkaVMName:  config.OrkaVMBuilderName,
@@ -277,18 +277,18 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 	if config.DoNotDelete {
 		ui.Say("We are skipping the deletion of the temporary VM and its configuration because of do_not_delete being set.")
-		if !config.DoNotPrecopy {
+		if config.ImagePrecopy {
 			ui.Say(fmt.Sprintf("Pre-copy was performed; image %s will be left and not removed.",
 				config.ImageName))
 		}
 		return
-	} else if s.failed && !config.DoNotPrecopy {
+	} else if s.failed && config.ImagePrecopy {
 		ui.Say(fmt.Sprintf("Pre-copy was performed; cleaning up image %s", config.ImageName))
 		precopyDeleteFailed := s.precopyImageDelete(state)
 		if precopyDeleteFailed != nil {
 			return
 		}
-	} else if s.failed && config.DoNotPrecopy {
+	} else if s.failed && !config.ImagePrecopy {
 		ui.Say("There is nothing to clean up since the VM creation and deployment failed.")
 		return
 	}

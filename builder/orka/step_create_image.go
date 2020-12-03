@@ -80,36 +80,48 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	// vmStartRequest.Body.Close()
 	// time.Sleep(time.Second * 30)
 
-	// Now that the VM is stopped, we can commit it.
+	// Now that the VM is stopped, we can commit or save it.
+
 	ui.Say("VM stopped; comitting image.")
 	ui.Say("Please wait, this can take a little while ...")
 
-	imageCommitRequestData := ImageCommitRequest{vmid}
-	imageCommitRequestDataJSON, _ := json.Marshal(imageCommitRequestData)
-	imageCommitRequest, err := http.NewRequest(
-		http.MethodPost,
-		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/commit"),
-		bytes.NewBuffer(imageCommitRequestDataJSON),
-	)
-	imageCommitRequest.Header.Set("Content-Type", "application/json")
-	imageCommitRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	imageCommitResponse, err := client.Do(imageCommitRequest)
+	if config.ImagePrecopy {
+		// If we are using the pre-copy logic, then we just re-commit the image back.
 
-	if err != nil {
-		ui.Error(fmt.Errorf("Error while comitting image: %s", err).Error())
-		return multistep.ActionHalt
-	}
+		ui.Say("Comitting existing image since pre-copy is being used.")
 
-	var imageCommitResponseData ImageCommitResponse
-	imageCommitResponseBytes, _ := ioutil.ReadAll(imageCommitResponse.Body)
-	json.Unmarshal(imageCommitResponseBytes, &imageCommitResponseData)
-	imageCommitResponse.Body.Close()
+		imageCommitRequestData := ImageCommitRequest{vmid}
+		imageCommitRequestDataJSON, _ := json.Marshal(imageCommitRequestData)
+		imageCommitRequest, err := http.NewRequest(
+			http.MethodPost,
+			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/commit"),
+			bytes.NewBuffer(imageCommitRequestDataJSON),
+		)
+		imageCommitRequest.Header.Set("Content-Type", "application/json")
+		imageCommitRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		imageCommitResponse, err := client.Do(imageCommitRequest)
 
-	if imageCommitResponse.StatusCode != 200 {
-		e := fmt.Errorf("Error from API: %s", imageCommitResponse.Status)
-		ui.Error(e.Error())
+		if err != nil {
+			ui.Error(fmt.Errorf("Error while comitting image: %s", err).Error())
+			return multistep.ActionHalt
+		}
+
+		var imageCommitResponseData ImageCommitResponse
+		imageCommitResponseBytes, _ := ioutil.ReadAll(imageCommitResponse.Body)
+		json.Unmarshal(imageCommitResponseBytes, &imageCommitResponseData)
+		imageCommitResponse.Body.Close()
+
+		if imageCommitResponse.StatusCode != 200 {
+			e := fmt.Errorf("Error from API: %s", imageCommitResponse.Status)
+			ui.Error(e.Error())
+		} else {
+			ui.Say(fmt.Sprintf("Image comitted, response was: %s", imageCommitResponseData.Message))
+		}
 	} else {
-		ui.Say(fmt.Sprintf("Image comitted, response was: %s", imageCommitResponseData.Message))
+		// By default we use the save endpoint to generate a new base image from
+		// the running VM's current image.
+
+		ui.Say("Saving new image since pre-copy is not being used.")
 	}
 
 	return multistep.ActionContinue
