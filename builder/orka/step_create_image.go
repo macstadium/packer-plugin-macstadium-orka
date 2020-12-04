@@ -103,7 +103,8 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		imageCommitResponse, err := client.Do(imageCommitRequest)
 
 		if err != nil {
-			ui.Error(fmt.Errorf("Error while comitting image: %s", err).Error())
+			e := fmt.Errorf("%s [%s]", OrkaAPIErrorMessage, err)
+			ui.Error(e.Error())
 			return multistep.ActionHalt
 		}
 
@@ -113,16 +114,15 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		imageCommitResponse.Body.Close()
 
 		if imageCommitResponse.StatusCode != 200 {
-			e := fmt.Errorf("Error from API: %s", imageCommitResponse.Status)
-			ui.Error(e.Error())
+			ui.Error(fmt.Errorf("Error committing image [%s]", imageCommitResponse.Status).Error())
 		} else {
-			ui.Say(fmt.Sprintf("Image comitted, response was: %s", imageCommitResponseData.Message))
+			ui.Say(fmt.Sprintf("Image comitted [%s] [%s]", imageCommitResponse.Status, imageCommitResponseData.Message))
 		}
 	} else {
 		// By default we use the save endpoint to generate a new base image from
 		// the running VM's current image.
 
-		ui.Say("Saving new image.")
+		ui.Say(fmt.Sprintf("Saving new image %s", config.ImageName))
 
 		imageSaveRequestData := ImageSaveRequest{vmid, config.ImageName}
 		imageSaveRequestDataJSON, _ := json.Marshal(imageSaveRequestData)
@@ -136,7 +136,8 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		imageSaveResponse, err := client.Do(imageSaveRequest)
 
 		if err != nil {
-			ui.Error(fmt.Errorf("Error while saving new image: %s", err).Error())
+			e := fmt.Errorf("%s [%s]", OrkaAPIErrorMessage, err)
+			ui.Error(e.Error())
 			return multistep.ActionHalt
 		}
 
@@ -149,7 +150,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 			e := fmt.Errorf("Error from API: %s", imageSaveResponse.Status)
 			ui.Error(e.Error())
 		} else {
-			ui.Say(fmt.Sprintf("Image saved, response was: %s", imageSaveResponseData.Message))
+			ui.Say(fmt.Sprintf("Image saved with message: %s", imageSaveResponseData.Message))
 		}
 	}
 
