@@ -93,4 +93,5 @@ type VMStopResponse struct {
 	Message string `json:"message"`
 }
 
-const OrkaAPIErrorMessage = "Error making request to Orka API"
+const OrkaAPIRequestErrorMessage = "Error making request to Orka API"
+const OrkaAPIResponseErrorMessage = "Error from Orka API"
