@@ -133,8 +133,12 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 
 	ui.Say(fmt.Sprintf("Creating a temporary VM configuration: %s",
 		config.OrkaVMBuilderName))
-	ui.Say(fmt.Sprintf("Temporary VM configuration is using base image: %s",
-		config.ImageName))
+	if config.ImagePrecopy {
+		ui.Say(fmt.Sprintf("Temporary VM configuration is using pre-copied base image: %s",
+			actualImage))
+	} else {
+		ui.Say(fmt.Sprintf("Temporary VM configuration is using base image: %s", actualImage))
+	}
 	vmCreateConfigRequestData := VMCreateRequest{
 		OrkaVMName:  config.OrkaVMBuilderName,
 		OrkaVMImage: actualImage,
