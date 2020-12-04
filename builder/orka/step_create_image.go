@@ -34,8 +34,9 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		Timeout: time.Minute * 5,
 	}
 
-	ui.Say(fmt.Sprintf("Comitting base image for VM: %s", vmid))
-	ui.Say(fmt.Sprintf("Name of image being comitted: %s", config.ImageName))
+	ui.Say(fmt.Sprintf("Image creation for VM: %s", vmid))
+	ui.Say(fmt.Sprintf("Image name: %s", config.ImageName))
+
 	ui.Say("We must stop and then start (restart) the VM first.")
 
 	stopVMRequestData := VMStopRequest{vmid}
@@ -82,13 +83,13 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 	// Now that the VM is stopped, we can commit or save it.
 
-	ui.Say("VM stopped; comitting image.")
+	ui.Say("VM stopped; committing image.")
 	ui.Say("Please wait, this can take a little while ...")
 
 	if config.ImagePrecopy {
 		// If we are using the pre-copy logic, then we just re-commit the image back.
 
-		ui.Say("Comitting existing image since pre-copy is being used.")
+		ui.Say("Committing existing image since pre-copy is being used.")
 
 		imageCommitRequestData := ImageCommitRequest{vmid}
 		imageCommitRequestDataJSON, _ := json.Marshal(imageCommitRequestData)

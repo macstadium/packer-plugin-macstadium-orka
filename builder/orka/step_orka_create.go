@@ -79,10 +79,6 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 
 	var actualImage string
 
-	// ############################################################
-	// # PRE-COPY SOURCE IMAGE TO NEW IMAGE THAT WILL GET CREATED #
-	// ############################################################
-
 	if !config.DoNotImage && config.ImagePrecopy {
 		ui.Say(fmt.Sprintf("Pre-copying source image %s to destination image %s", config.SourceImage, config.ImageName))
 		ui.Say("This can take awhile depending on how big the source image is; please wait ...")
@@ -120,14 +116,12 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		}
 
 		ui.Say("Image copied.")
-
 		actualImage = config.ImageName
 	} else {
 		if config.DoNotImage {
 			ui.Say("Skipping source image pre-copy because of do_not_image being set.")
-		} else {
-			ui.Say("Skipping source image pre-copy because of  bieng set.")
 		}
+
 		actualImage = config.SourceImage
 	}
 
