@@ -65,8 +65,8 @@ type FlatConfig struct {
 	ImageName                 *string           `mapstructure:"image_name" required:"false" cty:"image_name"`
 	SimulateCreate            *bool             `mapstructure:"simulate_create" cty:"simulate_create"`
 	ImagePrecopy              *bool             `mapstructure:"image_precopy" required:"false" cty:"image_precopy"`
-	DoNotImage                *bool             `mapstructure:"do_not_image" cty:"do_not_image"`
-	DoNotDelete               *bool             `mapstructure:"do_not_delete" cty:"do_not_delete"`
+	NoCreateImage             *bool             `mapstructure:"no_create_image" cty:"no_create_image"`
+	NoDeleteVM                *bool             `mapstructure:"no_delete_vm" cty:"no_delete_vm"`
 }
 
 // FlatMapstructure returns a new FlatConfig.
@@ -137,8 +137,8 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"image_name":                   &hcldec.AttrSpec{Name: "image_name", Type: cty.String, Required: false},
 		"simulate_create":              &hcldec.AttrSpec{Name: "simulate_create", Type: cty.Bool, Required: false},
 		"image_precopy":                &hcldec.AttrSpec{Name: "image_precopy", Type: cty.Bool, Required: false},
-		"do_not_image":                 &hcldec.AttrSpec{Name: "do_not_image", Type: cty.Bool, Required: false},
-		"do_not_delete":                &hcldec.AttrSpec{Name: "do_not_delete", Type: cty.Bool, Required: false},
+		"no_create_image":              &hcldec.AttrSpec{Name: "no_create_image", Type: cty.Bool, Required: false},
+		"no_delete_vm":                 &hcldec.AttrSpec{Name: "no_delete_vm", Type: cty.Bool, Required: false},
 	}
 	return s
 }

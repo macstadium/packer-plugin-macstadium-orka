@@ -49,10 +49,10 @@ type Config struct {
 	ImagePrecopy bool `mapstructure:"image_precopy" required:"false"`
 
 	// Do not image after completion, for some manual testing, for internal dev/testing.
-	DoNotImage bool `mapstructure:"do_not_image"`
+	NoCreateImage bool `mapstructure:"no_create_image"`
 
 	// Do not delete after completion, for some manual testing, for internal dev/testing.
-	DoNotDelete bool `mapstructure:"do_not_delete"`
+	NoDeleteVM bool `mapstructure:"no_delete_vm"`
 }
 
 func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
