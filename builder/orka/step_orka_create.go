@@ -79,11 +79,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 
 	var actualImage string
 
-	// ############################################################
-	// # PRE-COPY SOURCE IMAGE TO NEW IMAGE THAT WILL GET CREATED #
-	// ############################################################
-
-	if !config.DoNotImage || !config.DoNotPrecopy {
+	if !config.DoNotImage && config.ImagePrecopy {
 		ui.Say(fmt.Sprintf("Pre-copying source image %s to destination image %s", config.SourceImage, config.ImageName))
 		ui.Say("This can take awhile depending on how big the source image is; please wait ...")
 
@@ -124,9 +120,8 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	} else {
 		if config.DoNotImage {
 			ui.Say("Skipping source image pre-copy because of do_not_image being set.")
-		} else {
-			ui.Say("Skipping source image pre-copy because of do_not_precopy bieng set.")
 		}
+
 		actualImage = config.SourceImage
 	}
 
@@ -138,7 +133,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 
 	ui.Say(fmt.Sprintf("Creating a temporary VM configuration: %s",
 		config.OrkaVMBuilderName))
-	ui.Say(fmt.Sprintf("Temporary VM configuration is using new, pre-copied base image: %s",
+	ui.Say(fmt.Sprintf("Temporary VM configuration is using base image: %s",
 		config.ImageName))
 	vmCreateConfigRequestData := VMCreateRequest{
 		OrkaVMName:  config.OrkaVMBuilderName,
@@ -232,7 +227,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	return multistep.ActionContinue
 }
 
-func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) {
+func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) error {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
 	token := state.Get("token").(string)
@@ -254,17 +249,20 @@ func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) {
 		e := fmt.Errorf("Error from API: %s", err)
 		ui.Error(e.Error())
 		state.Put("error", e)
+		return e
 	}
 
 	if imageDeleteResponse.StatusCode != 200 {
 		e := fmt.Errorf("Error from API: %s", imageDeleteResponse.Status)
 		ui.Error("VM was not purged.")
 		ui.Error(e.Error())
-	} else {
-		ui.Say("VM purged.")
+		return e
 	}
 
+	ui.Say("VM purged.")
 	imageDeleteResponse.Body.Close()
+
+	return nil
 }
 
 func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
@@ -274,15 +272,18 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 	if config.DoNotDelete {
 		ui.Say("We are skipping the deletion of the temporary VM and its configuration because of do_not_delete being set.")
-		if !config.DoNotPrecopy {
+		if config.ImagePrecopy {
 			ui.Say(fmt.Sprintf("Pre-copy was performed; image %s will be left and not removed.",
 				config.ImageName))
 		}
 		return
-	} else if s.failed && !config.DoNotPrecopy {
+	} else if s.failed && config.ImagePrecopy {
 		ui.Say(fmt.Sprintf("Pre-copy was performed; cleaning up image %s", config.ImageName))
-		s.precopyImageDelete(state)
-	} else if s.failed && config.DoNotPrecopy {
+		precopyDeleteFailed := s.precopyImageDelete(state)
+		if precopyDeleteFailed != nil {
+			return
+		}
+	} else if s.failed && !config.ImagePrecopy {
 		ui.Say("There is nothing to clean up since the VM creation and deployment failed.")
 		return
 	}
@@ -313,6 +314,4 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	} else {
 		ui.Say("VM purged.")
 	}
-
-	vmPurgeResponse.Body.Close()
 }

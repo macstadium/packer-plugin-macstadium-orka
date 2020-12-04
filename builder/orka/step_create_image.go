@@ -34,8 +34,9 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		Timeout: time.Minute * 5,
 	}
 
-	ui.Say(fmt.Sprintf("Comitting base image for VM: %s", vmid))
-	ui.Say(fmt.Sprintf("Name of image being comitted: %s", config.ImageName))
+	ui.Say(fmt.Sprintf("Image creation for VM: %s", vmid))
+	ui.Say(fmt.Sprintf("Image name: %s", config.ImageName))
+
 	ui.Say("We must stop and then start (restart) the VM first.")
 
 	stopVMRequestData := VMStopRequest{vmid}
@@ -80,36 +81,76 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	// vmStartRequest.Body.Close()
 	// time.Sleep(time.Second * 30)
 
-	// Now that the VM is stopped, we can commit it.
-	ui.Say("VM stopped; comitting image.")
+	// Now that the VM is stopped, we can commit or save it.
+
+	ui.Say("VM stopped; committing image.")
 	ui.Say("Please wait, this can take a little while ...")
 
-	imageCommitRequestData := ImageCommitRequest{vmid}
-	imageCommitRequestDataJSON, _ := json.Marshal(imageCommitRequestData)
-	imageCommitRequest, err := http.NewRequest(
-		http.MethodPost,
-		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/commit"),
-		bytes.NewBuffer(imageCommitRequestDataJSON),
-	)
-	imageCommitRequest.Header.Set("Content-Type", "application/json")
-	imageCommitRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	imageCommitResponse, err := client.Do(imageCommitRequest)
+	if config.ImagePrecopy {
+		// If we are using the pre-copy logic, then we just re-commit the image back.
 
-	if err != nil {
-		ui.Error(fmt.Errorf("Error while comitting image: %s", err).Error())
-		return multistep.ActionHalt
-	}
+		ui.Say("Committing existing image since pre-copy is being used.")
 
-	var imageCommitResponseData ImageCommitResponse
-	imageCommitResponseBytes, _ := ioutil.ReadAll(imageCommitResponse.Body)
-	json.Unmarshal(imageCommitResponseBytes, &imageCommitResponseData)
-	imageCommitResponse.Body.Close()
+		imageCommitRequestData := ImageCommitRequest{vmid}
+		imageCommitRequestDataJSON, _ := json.Marshal(imageCommitRequestData)
+		imageCommitRequest, err := http.NewRequest(
+			http.MethodPost,
+			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/commit"),
+			bytes.NewBuffer(imageCommitRequestDataJSON),
+		)
+		imageCommitRequest.Header.Set("Content-Type", "application/json")
+		imageCommitRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		imageCommitResponse, err := client.Do(imageCommitRequest)
 
-	if imageCommitResponse.StatusCode != 200 {
-		e := fmt.Errorf("Error from API: %s", imageCommitResponse.Status)
-		ui.Error(e.Error())
+		if err != nil {
+			ui.Error(fmt.Errorf("Error while comitting image: %s", err).Error())
+			return multistep.ActionHalt
+		}
+
+		var imageCommitResponseData ImageCommitResponse
+		imageCommitResponseBytes, _ := ioutil.ReadAll(imageCommitResponse.Body)
+		json.Unmarshal(imageCommitResponseBytes, &imageCommitResponseData)
+		imageCommitResponse.Body.Close()
+
+		if imageCommitResponse.StatusCode != 200 {
+			e := fmt.Errorf("Error from API: %s", imageCommitResponse.Status)
+			ui.Error(e.Error())
+		} else {
+			ui.Say(fmt.Sprintf("Image comitted, response was: %s", imageCommitResponseData.Message))
+		}
 	} else {
-		ui.Say(fmt.Sprintf("Image comitted, response was: %s", imageCommitResponseData.Message))
+		// By default we use the save endpoint to generate a new base image from
+		// the running VM's current image.
+
+		ui.Say("Saving new image.")
+
+		imageSaveRequestData := ImageSaveRequest{vmid, config.ImageName}
+		imageSaveRequestDataJSON, _ := json.Marshal(imageSaveRequestData)
+		imageSaveRequest, err := http.NewRequest(
+			http.MethodPost,
+			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/save"),
+			bytes.NewBuffer(imageSaveRequestDataJSON),
+		)
+		imageSaveRequest.Header.Set("Content-Type", "application/json")
+		imageSaveRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		imageSaveResponse, err := client.Do(imageSaveRequest)
+
+		if err != nil {
+			ui.Error(fmt.Errorf("Error while saving new image: %s", err).Error())
+			return multistep.ActionHalt
+		}
+
+		var imageSaveResponseData ImageSaveResponse
+		imageSaveResponseBytes, _ := ioutil.ReadAll(imageSaveResponse.Body)
+		json.Unmarshal(imageSaveResponseBytes, &imageSaveResponseData)
+		imageSaveResponse.Body.Close()
+
+		if imageSaveResponse.StatusCode != 200 {
+			e := fmt.Errorf("Error from API: %s", imageSaveResponse.Status)
+			ui.Error(e.Error())
+		} else {
+			ui.Say(fmt.Sprintf("Image saved, response was: %s", imageSaveResponseData.Message))
+		}
 	}
 
 	return multistep.ActionContinue

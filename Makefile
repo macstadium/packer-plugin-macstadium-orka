@@ -1,4 +1,4 @@
-PREFIX := github.com/andrewfarley/packer-builder-macstadium-orka
+PREFIX := github.com/lumoslabs/packer-builder-macstadium-orka
 VERSION := $(shell git describe --tags --candidates=1 --dirty 2>/dev/null || echo "dev")
 FLAGS := -X main.Version=$(VERSION)
 BIN := packer-builder-macstadium-orka
@@ -27,7 +27,7 @@ packer-build-example:
 packer-build-example-non-debug:
 	packer build examples/macos-catalina.json
 
-fresh: clean build install packer-build-example
+fresh: clean build install packer-build-example-non-debug
 
 rebuild: clean build install
 

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/andrewfarley/packer-builder-macstadium-orka/builder/orka"
 	"github.com/hashicorp/packer/packer/plugin"
+	"github.com/lumoslabs/packer-builder-macstadium-orka/builder/orka"
 )
 
 func main() {
