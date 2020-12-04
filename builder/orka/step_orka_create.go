@@ -14,7 +14,8 @@ import (
 )
 
 type stepOrkaCreate struct {
-	failed bool
+	failed        bool
+	precopyFailed bool
 }
 
 func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, error) {
@@ -105,6 +106,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 				ui.Error(fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err).Error())
 				state.Put("error", err)
 				s.failed = true
+				s.precopyFailed = true
 				return multistep.ActionHalt
 			}
 
@@ -116,7 +118,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 			if imageCopyResponse.StatusCode != 200 {
 				e := fmt.Errorf("Error from API: %s", imageCopyResponse.Status)
 				ui.Error(e.Error())
-				state.Put("error", e.Error())
+				state.Put("error", e)
 				s.failed = true
 				return multistep.ActionHalt
 			}
@@ -172,7 +174,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	if vmCreateConfigResponse.StatusCode != 201 {
 		e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, vmCreateConfigResponse.Status)
 		ui.Error(e.Error())
-		state.Put("error", e.Error())
+		state.Put("error", e)
 		s.failed = true
 		return multistep.ActionHalt
 	}
