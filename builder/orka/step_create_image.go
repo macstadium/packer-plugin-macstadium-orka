@@ -146,9 +146,10 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 		if imageSaveResponse.StatusCode != 200 {
 			ui.Error(fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, imageSaveResponse.Status).Error())
-		} else {
-			ui.Say(fmt.Sprintf("Image saved [%s] [%s]", imageSaveResponse.Status, imageSaveResponseData.Message))
+			return multistep.ActionHalt
 		}
+
+		ui.Say(fmt.Sprintf("Image saved [%s] [%s]", imageSaveResponse.Status, imageSaveResponseData.Message))
 	}
 
 	return multistep.ActionContinue
