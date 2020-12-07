@@ -24,7 +24,7 @@
       "orka_endpoint": "{{user `ORKA_ENDPOINT`}}",
       "orka_user": "{{user `ORKA_USER`}}",
       "orka_password": "{{user `ORKA_PASSWORD`}}",
-      "image_precopy": true,
+      "image_precopy": false,
       "simulate_create": false,
       "no_create_image": false,
       "no_delete_vm": false

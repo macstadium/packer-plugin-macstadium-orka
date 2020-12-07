@@ -148,8 +148,8 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		OrkaVMName:  config.OrkaVMBuilderName,
 		OrkaVMImage: actualImage,
 		OrkaImage:   config.OrkaVMBuilderName,
-		OrkaCPUCore: 3,
-		VCPUCount:   3,
+		OrkaCPUCore: config.OrkaVMCPUCore,
+		VCPUCount:   config.OrkaVMCPUCore,
 	}
 	vmCreateConfigRequestDataJSON, _ := json.Marshal(vmCreateConfigRequestData)
 	vmCreateConfigRequest, err := http.NewRequest(
