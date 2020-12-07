@@ -30,6 +30,7 @@ type Config struct {
 	OrkaPassword        string `mapstructure:"orka_password" required:"true"`
 	OrkaVMBuilderPrefix string `mapstructure:"orka_vm_builder_prefix"`
 	OrkaVMBuilderName   string `mapstructure:"orka_vm_builder_name"`
+	OrkaVMCPUCore       int    `mapstructure:"orka_vm_cpu_core"`
 
 	// Name of the VM Config to launch from
 	SourceImage string `mapstructure:"source_image" required:"true"`
@@ -117,6 +118,11 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		}
 		// log.Printf("No Destination Image Specified. Using default: %s", name)
 		c.ImageName = name
+	}
+
+	// If we didn't specify the number of cores, set it to the default of 3.
+	if c.OrkaVMCPUCore == 0 {
+		c.OrkaVMCPUCore = 3
 	}
 
 	if es := c.CommConfig.Prepare(nil); len(es) > 0 {
