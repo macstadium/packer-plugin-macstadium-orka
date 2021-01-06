@@ -159,7 +159,7 @@ This plugin is "very-loosely" based-on and took inspiration from the [Packer Nul
 [Packer Downloads]: https://www.packer.io/downloads.html
 [Orka CLI Downloads]: https://orkadocs.macstadium.com/docs/downloads
 [Orka Setup Guide]: https://orkadocs.macstadium.com/docs/quick-start
-[Latest Release]: https://github.com/andrewfarley/packer-builder-macstadium-orka/releases
+[Latest Release]: https://github.com/lumoslabs/packer-builder-macstadium-orka/releases
 [Farley Farley]: https://github.com/andrewfarley
 [GNU GPL v3]: https://choosealicense.com/licenses/gpl-3.0/
 [v1.0.0]: https://github.com/andrewfarley/packer-builder-macstadium-orka/releases/tag/v1.0.0
