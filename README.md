@@ -1,6 +1,8 @@
-# Packer Builder for Orka
+Packer Builder Plugin for Orka
+==============================
 
-This is a [Packer Builder] to automate building images for [MacStadium Orka] a Kubernetes/Docker-based macOS virtualization PaaS/SaaS service by [MacStadium].
+This is a [Packer Builder] plugin to automate building images for [MacStadium Orka],
+a Kubernetes/Docker-based macOS virtualization PaaS/SaaS service by [MacStadium].
 
 ![example screenshot](./images/screenshot1.jpg)
 
@@ -22,16 +24,16 @@ For this plugin to function you need to have at least Packer 1.6.0 installed and
     * The `~/.packer.d/plugins` directory.
     * The current working directory.
 5. Ensure that you make this downloaded file executable and that it runs on your machine.  For OS-X you may need to remove a the quarantine bit with the following...
-```bash
-# On every Unix-ey OS you'll need to chmod it
-chmod a+x ~/.packer.d/plugins/packer-builder-macstadium-orka
-# On Macs because of a security system in place, you will need to un-quarantine it
-xattr -d ~/.packer.d/plugins/com.apple.quarantine/packer-builder-macstadium-orka
-# If you try to run it on every os it should work but report that you shouldn't run plugins directly
-~/.packer.d/plugins/com.apple.quarantine/packer-builder-macstadium-orka
-panic: Please do not execute plugins directly. Packer will execute these for you.
-```
-6. Change to a directory where you have [packer] templates, and packer run as usual, but using the `macstadium-orka` as the builder, per the example below.
+    ```bash
+    # On every Unix-ey OS you'll need to chmod it
+    chmod a+x ~/.packer.d/plugins/packer-builder-macstadium-orka
+    # On Macs because of a security system in place, you will need to un-quarantine it
+    xattr -d ~/.packer.d/plugins/com.apple.quarantine/packer-builder-macstadium-orka
+    # If you try to run it on every os it should work but report that you shouldn't run plugins directly
+    ~/.packer.d/plugins/com.apple.quarantine/packer-builder-macstadium-orka
+    panic: Please do not execute plugins directly. Packer will execute these for you.
+    ```
+  6. Change to a directory where you have [packer] templates, and packer run as usual, but using the `macstadium-orka` as the builder, per the example below.
 
 ## Packer Builder Configuration
 
@@ -60,7 +62,7 @@ This is the destination name of the image that will be created.  The image will 
 
 ### Development / Internal Options
 
-If you're NOT a dev working on this software you can ignore the following.
+If you're NOT a developer working on this software you can ignore the following.
 
 But, if you are building/editing/updating this software, you may want to turn on most or all of the following options.  See the [examples/macos-catalina.json](./examples/macos-catalina.json).
 
@@ -74,16 +76,15 @@ By default this plugin automatically deletes the VM afterwards if all scripts ra
 
 * `do_not_image` _(boolean)_ (optional) _*- for devs*_
 
-By default this plugin automatically creates an image of the VM after any provisioning steps.  AFAIK there is no mechanism built-into Packer to "force" it to not image the VM afterwards, so this fills that gap.  This is useful for debugging builds that are being weird, but is generally not intended for noraml use.
-
-
-## Information Notes / Gotchas
-
-[MacStadium Orka] base images have SSH enabled by default and the username/password is `admin:admin` because they are within' a private network by default.  So this plugin has those credentials hardcoded by default, but you can of course customize the communicator.  See the options from the [SSH Communicator].
+By default this plugin automatically creates an image of the VM after any provisioning
+steps. AFAIK there is no mechanism built-into Packer to "force" it to not image the VM
+afterwards, so this fills that gap. This is useful for debugging builds that are being
+weird, but is generally not intended for noraml use.
 
 ## Example Orka Commands
 
-These aren't directly related to this plugin, exactly, but they're a bit of a simplified guide to get you started.  For a more full guide see: [Orka Setup Guide].
+These aren't directly related to this plugin, exactly, but they're a bit of a simplified
+guide to get you started. For a more full guide see: [Orka Setup Guide].
 
 ```bash
 # Create a config which is used for source_image above
@@ -144,27 +145,25 @@ These are a list of things that are pending to accomplish within' this repo.  Co
 
 This plugin is "very-loosely" based-on and took inspiration from the [Packer Null Builder], [Packer LXD Builder], and the [Packer Builder Veertu Anka].
 
-* Written by [Farley Farley] ( farley _at_ neonsurge **dawt** com )
+* Written by [Farley Farley] ( farley _at_ neonsurge **dawt** com ), [Thomas Farvour]
 * License Terms: [GNU GPL v3]
-
-
-
 
 [//]: <> (Ignore, below here are links for ease-of-use above)
 [Packer]: https://www.packer.io/
 [Packer Builder]: https://www.packer.io/docs/extending/custom-builders.html
+[MacStadium]: https://www.macstadium.com
 [MacStadium Orka]: https://www.macstadium.com/orka
 [Orka]: https://www.macstadium.com/orka
-[MacStadium]: https://www.macstadium.com
 [Packer Downloads]: https://www.packer.io/downloads.html
 [Orka CLI Downloads]: https://orkadocs.macstadium.com/docs/downloads
 [Orka Setup Guide]: https://orkadocs.macstadium.com/docs/quick-start
 [Latest Release]: https://github.com/lumoslabs/packer-builder-macstadium-orka/releases
 [Farley Farley]: https://github.com/andrewfarley
+[Thomas Farvour]: https://github.com/farvour
 [GNU GPL v3]: https://choosealicense.com/licenses/gpl-3.0/
 [v1.0.0]: https://github.com/andrewfarley/packer-builder-macstadium-orka/releases/tag/v1.0.0
 [SSH Communicator]: https://www.packer.io/docs/communicators/ssh
 [Packer Builder Veertu Anka]: https://github.com/veertuinc/packer-builder-veertu-anka
 [Packer Null Builder]: https://github.com/hashicorp/packer/tree/master/builder/null
 [Packer LXD Builder]: https://github.com/hashicorp/packer/tree/master/builder/lxd
-[file an issue]: https://github.com/AndrewFarley/packer-builder-macstadium-orka/issues
+[file an issue]: https://github.com/lumoslabs/packer-builder-macstadium-orka/issues
