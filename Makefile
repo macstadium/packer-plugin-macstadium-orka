@@ -22,10 +22,10 @@ install: $(BIN)
 	cp $(BIN) ~/.packer.d/plugins/
 
 packer-build-example:
-	PACKER_LOG=1 packer build -on-error=ask examples/macos-catalina.json
+	PACKER_LOG=1 packer build -on-error=ask examples/macos-bigsur.json
 
 packer-build-example-non-debug:
-	packer build examples/macos-catalina.json
+	packer build examples/macos-bigsur.json
 
 fresh: clean build install packer-build-example-non-debug
 

@@ -1,0 +1,33 @@
+{
+  "variables": {
+    "PACKER_ORKA_SOURCE_IMAGE_NAME": "macos-bigsur-v1.img",
+    "PACKER_ORKA_IMAGE_NAME_PREFIX": "packer",
+    "ORKA_ENDPOINT": "{{env `ORKA_ENDPOINT`}}",
+    "ORKA_USER": "{{env `ORKA_USER`}}",
+    "ORKA_PASSWORD": "{{env `ORKA_PASSWORD`}}"
+  },
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "echo we are running on the remote host",
+        "hostname",
+        "touch .we-ran-packer-successfully"
+      ]
+    }
+  ],
+  "builders": [
+    {
+      "type": "macstadium-orka",
+      "source_image": "{{user `PACKER_ORKA_SOURCE_IMAGE_NAME`}}",
+      "image_name": "{{user `PACKER_ORKA_IMAGE_NAME_PREFIX`}}-{{timestamp}}.img",
+      "orka_endpoint": "{{user `ORKA_ENDPOINT`}}",
+      "orka_user": "{{user `ORKA_USER`}}",
+      "orka_password": "{{user `ORKA_PASSWORD`}}",
+      "image_precopy": false,
+      "simulate_create": false,
+      "no_create_image": false,
+      "no_delete_vm": false
+    }
+  ]
+}
