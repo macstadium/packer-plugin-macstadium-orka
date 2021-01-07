@@ -313,7 +313,7 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 	// vmid := state.Get("vmid").(string)
 
-	ui.Say("Removing builder VM and its configuration")
+	ui.Say("Removing builder VM and its configuration...")
 
 	client := &http.Client{}
 

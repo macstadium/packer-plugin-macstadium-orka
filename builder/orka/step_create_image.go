@@ -125,22 +125,20 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
 	ui := state.Get("ui").(packer.Ui)
 	vmid := state.Get("vmid").(string)
-
-	if vmid == "" {
-		return
-	}
+	_, cancelled := state.GetOk(multistep.StateCancelled)
+	_, halted := state.GetOk(multistep.StateHalted)
 
 	if s.failedCommit || s.failedSave {
+		// TODO: Automatically clean up? Make a user-flag?
 		ui.Say("Commit or save failed - please check Orka to see if any artifacts were left behind")
 		return
 	}
-
-	_, cancelled := state.GetOk(multistep.StateCancelled)
-	_, halted := state.GetOk(multistep.StateHalted)
 
 	if !cancelled && !halted {
 		return
 	}
 
-	ui.Say("Image cleanup complete")
+	if vmid == "" {
+		return
+	}
 }
