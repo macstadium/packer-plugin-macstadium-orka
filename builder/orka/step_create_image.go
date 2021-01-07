@@ -14,7 +14,8 @@ import (
 )
 
 type stepCreateImage struct {
-	failed bool
+	failedCommit bool
+	failedSave   bool
 }
 
 func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
@@ -24,71 +25,24 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	token := state.Get("token").(string)
 
 	if config.NoCreateImage {
-		ui.Say("Skipping image creation because of 'no_create_image' being set.")
+		ui.Say("Skipping image creation because of 'no_create_image' being set")
 		return multistep.ActionContinue
-	}
-
-	// HTTP Client.
-
-	client := &http.Client{
-		Timeout: time.Minute * 5,
 	}
 
 	ui.Say(fmt.Sprintf("Image creation is using VM ID [%s]", vmid))
 	ui.Say(fmt.Sprintf("Image name is [%s]", config.ImageName))
 
-	// ui.Say("We must stop and then start (restart) the VM first")
+	// HTTP Client.
 
-	// stopVMRequestData := VMStopRequest{vmid}
-	// stopVMRequestDataJSON, _ := json.Marshal(stopVMRequestData)
-	// vmStopRequest, err := http.NewRequest(
-	// 	http.MethodPost,
-	// 	fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/stop"),
-	// 	bytes.NewBuffer(stopVMRequestDataJSON),
-	// )
-	// vmStopRequest.Header.Set("Content-Type", "application/json")
-	// vmStopRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	// ui.Say("Stopping and waiting 10 seconds...")
-	// vmStopResponse, err := client.Do(vmStopRequest)
-	// if err != nil {
-	// 	state.Put("error", err)
-	// 	return multistep.ActionHalt
-	// }
-	// var vmStopResponseData VMStopResponse
-	// vmStopRespBytes, _ := ioutil.ReadAll(vmStopResponse.Body)
-	// json.Unmarshal(vmStopRespBytes, &vmStopResponseData)
-	// vmStopResponse.Body.Close()
-	// time.Sleep(time.Second * 10)
-
-	// startVMRequestData := VMStartRequest{vmid}
-	// startVMRequestDataJSON, _ := json.Marshal(startVMRequestData)
-	// vmStartRequest, err := http.NewRequest(
-	// 	http.MethodPost,
-	// 	fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/start"),
-	// 	bytes.NewBuffer(startVMRequestDataJSON),
-	// )
-	// vmStartRequest.Header.Set("Content-Type", "application/json")
-	// vmStartRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	// ui.Say("Starting and waiting 30 seconds...")
-	// vmStartResponse, err := client.Do(vmStartRequest)
-	// if err != nil {
-	// 	ui.Error(fmt.Errorf("Error while starting VM %s: %s", vmid, err).Error())
-	// 	return multistep.ActionHalt
-	// }
-	// var vmStartResponseData VMStartResponse
-	// vmStartResponseBytes, _ := ioutil.ReadAll(vmStartResponse.Body)
-	// json.Unmarshal(vmStartResponseBytes, &vmStartResponseData)
-	// vmStartRequest.Body.Close()
-	// time.Sleep(time.Second * 30)
-
-	// Now that the VM is stopped, we can commit or save it.
-
-	ui.Say("Please wait as this can take a little while...")
+	client := &http.Client{
+		Timeout: time.Minute * 30,
+	}
 
 	if config.ImagePrecopy {
 		// If we are using the pre-copy logic, then we just re-commit the image back.
 
 		ui.Say("Committing existing image since pre-copy is being used")
+		ui.Say("Please wait as this can take a little while...")
 
 		imageCommitRequestData := ImageCommitRequest{vmid}
 		imageCommitRequestDataJSON, _ := json.Marshal(imageCommitRequestData)
@@ -102,8 +56,10 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		imageCommitResponse, err := client.Do(imageCommitRequest)
 
 		if err != nil {
+			s.failedCommit = true
 			e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 			ui.Error(e.Error())
+			state.Put("error", err)
 			return multistep.ActionHalt
 		}
 
@@ -113,15 +69,20 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		imageCommitResponse.Body.Close()
 
 		if imageCommitResponse.StatusCode != 200 {
-			ui.Error(fmt.Errorf("Error committing image [%s]", imageCommitResponse.Status).Error())
-		} else {
-			ui.Say(fmt.Sprintf("Image comitted [%s] [%s]", imageCommitResponse.Status, imageCommitResponseData.Message))
+			s.failedCommit = true
+			e := fmt.Errorf("Error committing image [%s]", imageCommitResponse.Status)
+			ui.Error(e.Error())
+			state.Put("error", err)
+			return multistep.ActionHalt
 		}
+
+		ui.Say(fmt.Sprintf("Image comitted [%s] [%s]", imageCommitResponse.Status, imageCommitResponseData.Message))
 	} else {
 		// By default we use the save endpoint to generate a new base image from
 		// the running VM's current image.
 
 		ui.Say(fmt.Sprintf("Saving new image [%s]", config.ImageName))
+		ui.Say("Please wait as this can take a little while...")
 
 		imageSaveRequestData := ImageSaveRequest{vmid, config.ImageName}
 		imageSaveRequestDataJSON, _ := json.Marshal(imageSaveRequestData)
@@ -135,7 +96,10 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		imageSaveResponse, err := client.Do(imageSaveRequest)
 
 		if err != nil {
-			ui.Error(fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err).Error())
+			s.failedSave = true
+			e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
+			ui.Error(e.Error())
+			state.Put("error", err)
 			return multistep.ActionHalt
 		}
 
@@ -145,7 +109,10 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		imageSaveResponse.Body.Close()
 
 		if imageSaveResponse.StatusCode != 200 {
-			ui.Error(fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, imageSaveResponse.Status).Error())
+			s.failedSave = true
+			e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, imageSaveResponse.Status)
+			ui.Error(e.Error())
+			state.Put("error", err)
 			return multistep.ActionHalt
 		}
 
@@ -158,17 +125,20 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
 	ui := state.Get("ui").(packer.Ui)
 	vmid := state.Get("vmid").(string)
-
-	if vmid == "" {
-		return
-	}
-
 	_, cancelled := state.GetOk(multistep.StateCancelled)
 	_, halted := state.GetOk(multistep.StateHalted)
+
+	if s.failedCommit || s.failedSave {
+		// TODO: Automatically clean up? Make a user-flag?
+		ui.Say("Commit or save failed - please check Orka to see if any artifacts were left behind")
+		return
+	}
 
 	if !cancelled && !halted {
 		return
 	}
 
-	ui.Say("Image cleanup complete.")
+	if vmid == "" {
+		return
+	}
 }

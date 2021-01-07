@@ -1,6 +1,6 @@
 {
   "variables": {
-    "PACKER_ORKA_SOURCE_IMAGE_NAME": "macos-catalina-10-15-7-base-v1.img",
+    "PACKER_ORKA_SOURCE_IMAGE_NAME": "macos-bigsur-v1.img",
     "PACKER_ORKA_IMAGE_NAME_PREFIX": "packer",
     "ORKA_ENDPOINT": "{{env `ORKA_ENDPOINT`}}",
     "ORKA_USER": "{{env `ORKA_USER`}}",
