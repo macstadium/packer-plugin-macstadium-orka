@@ -20,7 +20,7 @@
     {
       "type": "macstadium-orka",
       "source_image": "{{user `PACKER_ORKA_SOURCE_IMAGE_NAME`}}",
-      "image_name": "{{user `PACKER_ORKA_IMAGE_NAME_PREFIX`}}-{{timestamp}}.img",
+      "image_name": "{{user `PACKER_ORKA_IMAGE_NAME_PREFIX`}}-{{timestamp}}",
       "orka_endpoint": "{{user `ORKA_ENDPOINT`}}",
       "orka_user": "{{user `ORKA_USER`}}",
       "orka_password": "{{user `ORKA_PASSWORD`}}",
