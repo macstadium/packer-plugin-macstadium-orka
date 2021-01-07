@@ -14,8 +14,9 @@ import (
 )
 
 type stepOrkaCreate struct {
-	failed        bool
-	precopyFailed bool
+	loginFailed    bool
+	createVMFailed bool
+	precopyFailed  bool
 }
 
 func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, error) {
@@ -64,7 +65,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	if err != nil {
 		ui.Error(fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err).Error())
 		state.Put("error", err)
-		s.failed = true
+		s.loginFailed = true
 		return multistep.ActionHalt
 	}
 
@@ -105,7 +106,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 			if err != nil {
 				ui.Error(fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err).Error())
 				state.Put("error", err)
-				s.failed = true
+				s.createVMFailed = true
 				s.precopyFailed = true
 				return multistep.ActionHalt
 			}
@@ -119,7 +120,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 				e := fmt.Errorf("Error from API: %s", imageCopyResponse.Status)
 				ui.Error(e.Error())
 				state.Put("error", e)
-				s.failed = true
+				s.createVMFailed = true
 				return multistep.ActionHalt
 			}
 
@@ -175,7 +176,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, vmCreateConfigResponse.Status)
 		ui.Error(e.Error())
 		state.Put("error", e)
-		s.failed = true
+		s.createVMFailed = true
 		return multistep.ActionHalt
 	}
 
@@ -209,7 +210,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 			"error",
 			fmt.Errorf("Error from API while deploying Orka VM: %s",
 				vmDeployResponse.Status))
-		s.failed = true
+		s.createVMFailed = true
 		return multistep.ActionHalt
 	}
 
@@ -276,10 +277,16 @@ func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) error {
 func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
+
+	// There's nothing to clean up if the login never succeeded.
+	if s.loginFailed {
+		return
+	}
+
 	token := state.Get("token").(string)
 
 	if config.NoDeleteVM {
-		ui.Say("We are skipping the deletion of the builder VM and its configuration because of do_not_delete being set.")
+		ui.Say("We are skipping the deletion of the builder VM and its configuration because of do_not_delete being set")
 
 		if config.ImagePrecopy {
 			ui.Say(fmt.Sprintf("Pre-copy was performed: image %s will be left and not removed",
@@ -289,9 +296,9 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 		return
 	}
 
-	if s.failed {
+	if s.createVMFailed {
 		if config.ImagePrecopy {
-			ui.Say(fmt.Sprintf("Pre-copy was performed: cleaning up pre-copied image %s", config.ImageName))
+			ui.Say(fmt.Sprintf("Cleaning up pre-copied image %s", config.ImageName))
 			precopyDeleteFailed := s.precopyImageDelete(state)
 
 			if precopyDeleteFailed != nil {
@@ -299,15 +306,17 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 			}
 		}
 
-		ui.Say("Nothing to cleanup: the builder VM creation, deployment and/or provisioning failed.")
+		ui.Say("Nothing to cleanup because the builder VM creation, deployment and/or provisioning failed.")
+
 		return
 	}
 
 	// vmid := state.Get("vmid").(string)
 
-	ui.Say("Removing builder VM and its configuration...")
+	ui.Say("Removing builder VM and its configuration")
 
 	client := &http.Client{}
+
 	vmPurgeRequestData := VMPurgeRequest{config.OrkaVMBuilderName}
 	vmPurgeRequestDatJSON, _ := json.Marshal(vmPurgeRequestData)
 	vmPurgeRequest, err := http.NewRequest(
