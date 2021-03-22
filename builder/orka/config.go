@@ -54,6 +54,9 @@ type Config struct {
 
 	// Do not delete after completion, for some manual testing, for internal dev/testing.
 	NoDeleteVM bool `mapstructure:"no_delete_vm"`
+
+	// Enable Boost IO Performance https://orkadocs.macstadium.com/docs/boost-io-performance
+	OrkaVMBuilderEnableIOBoost bool `mapstructure:"orka_enable_io_boost"`
 }
 
 func (c *Config) Prepare(raws ...interface{}) ([]string, error) {

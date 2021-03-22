@@ -68,6 +68,7 @@ type FlatConfig struct {
 	ImagePrecopy              *bool             `mapstructure:"image_precopy" required:"false" cty:"image_precopy"`
 	NoCreateImage             *bool             `mapstructure:"no_create_image" cty:"no_create_image"`
 	NoDeleteVM                *bool             `mapstructure:"no_delete_vm" cty:"no_delete_vm"`
+	OrkaEnableIOBoost         *bool             `mapstructure:"orka_enable_io_boost" cty:"orka_enable_io_boost"`
 }
 
 // FlatMapstructure returns a new FlatConfig.
@@ -141,6 +142,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"image_precopy":                &hcldec.AttrSpec{Name: "image_precopy", Type: cty.Bool, Required: false},
 		"no_create_image":              &hcldec.AttrSpec{Name: "no_create_image", Type: cty.Bool, Required: false},
 		"no_delete_vm":                 &hcldec.AttrSpec{Name: "no_delete_vm", Type: cty.Bool, Required: false},
+		"orka_enable_io_boost":         &hcldec.AttrSpec{Name: "orka_enable_io_boost", Type: cty.Bool, Required: false},
 	}
 	return s
 }

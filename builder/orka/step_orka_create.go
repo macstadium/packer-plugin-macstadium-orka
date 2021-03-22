@@ -146,11 +146,12 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	ui.Say(fmt.Sprintf("Creating a Builder VM configuration [%s]",
 		config.OrkaVMBuilderName))
 	vmCreateConfigRequestData := VMCreateRequest{
-		OrkaVMName:  config.OrkaVMBuilderName,
-		OrkaVMImage: actualImage,
-		OrkaImage:   config.OrkaVMBuilderName,
-		OrkaCPUCore: config.OrkaVMCPUCore,
-		VCPUCount:   config.OrkaVMCPUCore,
+		OrkaVMName:        config.OrkaVMBuilderName,
+		OrkaVMImage:       actualImage,
+		OrkaImage:         config.OrkaVMBuilderName,
+		OrkaCPUCore:       config.OrkaVMCPUCore,
+		VCPUCount:         config.OrkaVMCPUCore,
+		OrkaEnableIOBoost: config.OrkaVMBuilderEnableIOBoost,
 	}
 	vmCreateConfigRequestDataJSON, _ := json.Marshal(vmCreateConfigRequestData)
 	vmCreateConfigRequest, err := http.NewRequest(
