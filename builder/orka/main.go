@@ -34,11 +34,12 @@ type ImageDeleteResponse struct {
 }
 
 type VMCreateRequest struct {
-	OrkaVMName  string `json:"orka_vm_name"`
-	OrkaVMImage string `json:"orka_base_image"`
-	OrkaImage   string `json:"orka_image"`
-	OrkaCPUCore int    `json:"orka_cpu_core"`
-	VCPUCount   int    `json:"vcpu_count"`
+	OrkaVMName        string `json:"orka_vm_name"`
+	OrkaVMImage       string `json:"orka_base_image"`
+	OrkaImage         string `json:"orka_image"`
+	OrkaCPUCore       int    `json:"orka_cpu_core"`
+	VCPUCount         int    `json:"vcpu_count"`
+	OrkaEnableIOBoost bool   `json:"io_boost"`
 }
 
 type VMCreateResponse struct {
