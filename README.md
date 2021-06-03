@@ -6,7 +6,7 @@ This is a [Packer Builder] to automate building images for [MacStadium Orka] a K
 
 ### Compatibility
 
-For this plugin to function you need to have at least Packer 1.6.0 installed and Orka CLI 1.3.0.
+For this plugin to function you need to have at least Packer 1.6.0 or above installed. 
 
  * [Packer Downloads] - 1.6.0+
  * [Orka CLI Downloads] - 1.3.0+
@@ -14,8 +14,8 @@ For this plugin to function you need to have at least Packer 1.6.0 installed and
 ## Install / Setup
 
 1. Install [Packer](https://www.packer.io/downloads.html)
-2. Install [Orka CLI](https://orkadocs.macstadium.com/docs/downloads)
-3. Setup Orka CLI - See: [Orka Setup Guide]
+2. Install [Orka CLI](https://orkadocs.macstadium.com/docs/downloads) (optional)
+3. Setup Orka CLI - See: [Orka Setup Guide] (optional)
 3. Download the [Latest Release] of this plugin.
 4. Rename the binary to `packer-builder-macstadium-orka`, then move it to a location where [Packer] will detect them at run-time, such as any of the following:
     * The directory where the [packer] binary is.
@@ -34,7 +34,7 @@ panic: Please do not execute plugins directly. Packer will execute these for you
 6. Change to a directory where you have [packer] templates, and packer run as usual, but using the `macstadium-orka` as the builder, per the example below.
 
 ## Packer Builder Configuration
-
+# JSON
 ```json
 {
   "builders": [{
@@ -42,6 +42,26 @@ panic: Please do not execute plugins directly. Packer will execute these for you
     "source_image": "name-of-image-from-vm-images-list",
     "image_name": "destination-image-name"
   }]
+}
+```
+# HCL
+```json
+source "macstadium-orka" "image" {
+  source_image    = "name-of-image-from-vm-images-list"
+  image_name      = "destination-image-name"
+}
+
+build {
+  sources = [
+    "macstadium-orka.image"
+  ]
+  provisioner "shell" {
+    inline = [
+      "echo we are running on the remote host",
+      "hostname",
+      "touch .we-ran-packer-successfully"
+    ]
+  }
 }
 ```
 ---
@@ -79,18 +99,17 @@ By default this plugin automatically deletes the VM afterwards if all scripts ra
 
 By default this plugin automatically creates an image of the VM after any provisioning steps.  AFAIK there is no mechanism built-into Packer to "force" it to not image the VM afterwards, so this fills that gap.  This is useful for debugging builds that are being weird, but is generally not intended for noraml use.
 
-
 ## Information Notes / Gotchas
 
 [MacStadium Orka] base images have SSH enabled by default and the username/password is `admin:admin` because they are within' a private network by default.  So this plugin has those credentials hardcoded by default, but you can of course customize the communicator.  See the options from the [SSH Communicator].
 
-## Example Orka Commands
+## Example Orka CLI Commands
 
 These aren't directly related to this plugin, exactly, but they're a bit of a simplified guide to get you started.  For a more full guide see: [Orka Setup Guide].
 
 ```bash
 # Create a config which is used for source_image above
-orka vm create-config -v macos-catalina-10-15-5 -c 3 --C 3 --vnc --base-image macos-catalina-10.15.5.img -y
+orka vm create-config -v <vm-name> -c 3 --C 3 --vnc --base-image <base-image> -y
 
 # In essence, this plugin automates running the following 3 commands...
 # Start a VM (using the config above)
@@ -103,7 +122,7 @@ orka image save -v <vmid-here-from-orka-vm-list> -b <destination-image-name> -y
 orka vm delete --vm <vmid-here-from-orka-vm-list> -y
 
 # Later to launch future images with this image create a new config to launch...
-orka vm create-config -v my-new-packerified-vm -c 3 --C 3 --vnc --base-image <destination-image-name> -y
+orka vm create-config -v <my-new-packerified-vm> -c 3 --C 3 --vnc --base-image <destination-image-name> -y
 # And launch it...
 orka vm deploy -v my-new-packerified-vm --vnc -y
 # Or, alternatively if you're done working with an image and want to delete it...
@@ -120,13 +139,11 @@ orka image delete --image <destination-image-name> -y
 
 If you want to help contribute to this plugin or find a bug, please [file an issue] on Github, and/or submit me a PR.  This is Open Source, so don't expect me to fix bugs immediately, but I'll try my best to reasonably support this plugin.  Contributors are always welcome though.
 
-To get a development environment up will need a recent golang installed and setup.  Then with a single make command below command it will build, install, and try to run the example at [examples/macos-catalina.json](./examples/macos-catalina.json).  You may need to edit this file to have the source VM config that you have locally, as it is hardcoded to my environment's image `macos-catalina-10-15-5` at the moment.
+To get a development environment up will need a recent golang installed and setup.  Then with a single make command below command it will build, install, and try to run the example at [examples/orka.pkr.hcl](./examples/orka.pkr.hcl).  You may need to edit this file to have the source VM config that you have locally, as it is hardcoded to my environment's image `macos-catalina-10-15-5` at the moment.
 
 ```bash
 make fresh
 ```
-
-Finally, if you want to support me or this project in some way, please donate to a local animal shelter or makerspace or one of many open-source projects that you rely on regularly.
 
 ## Todo (in no particular order)
 

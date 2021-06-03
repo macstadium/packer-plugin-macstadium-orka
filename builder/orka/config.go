@@ -1,4 +1,4 @@
-//go:generate mapstructure-to-hcl2 -type Config
+//go:generate packer-sdc mapstructure-to-hcl2 -type Config
 
 package orka
 
@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp/packer/common"
-	"github.com/hashicorp/packer/helper/communicator"
-	"github.com/hashicorp/packer/helper/config"
-	"github.com/hashicorp/packer/packer"
-	"github.com/hashicorp/packer/template/interpolate"
+	"github.com/hashicorp/packer-plugin-sdk/common"
+	"github.com/hashicorp/packer-plugin-sdk/communicator"
+	"github.com/hashicorp/packer-plugin-sdk/template/config"
+	"github.com/hashicorp/packer-plugin-sdk/packer"
+	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 )
 
 const (

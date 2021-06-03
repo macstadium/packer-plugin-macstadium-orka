@@ -1,6 +1,6 @@
 example.json
 crash.log
-packer-builder-macstadium-orka
+packer-plugin-macstadium-orka
 dist/
 
 
@@ -19,6 +19,7 @@ dist/
 # Folders
 _obj
 _test
+.vscode/
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -37,4 +38,5 @@ _testmain.go
 *.prof
 
 mapstructure-to-hcl2
+packer-sdc
 *.go.backup

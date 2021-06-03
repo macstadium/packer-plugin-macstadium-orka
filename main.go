@@ -1,15 +1,20 @@
 package main
 
 import (
-	"github.com/hashicorp/packer/packer/plugin"
-	"github.com/lumoslabs/packer-builder-macstadium-orka/builder/orka"
+	"fmt"
+	"os"
+
+	"github.com/hashicorp/packer-plugin-sdk/plugin"
+	"github.com/macstadium/packer-plugin-macstadium-orka/builder/orka"
 )
 
 func main() {
-	server, err := plugin.Server()
+	pps := plugin.NewSet()
+	pps.RegisterBuilder(plugin.DEFAULT_NAME, new(orka.Builder))
+	err := pps.Run()
+
 	if err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
 	}
-	server.RegisterBuilder(new(orka.Builder))
-	server.Serve()
 }
