@@ -6,9 +6,9 @@ This is a [Packer Builder] to automate building images for [MacStadium Orka] a K
 
 ### Compatibility
 
-For this plugin to function you need to have at least Packer 1.6.0 or above installed. 
+For this plugin to function you need to have at least Packer 1.7.0 or above installed. 
 
- * [Packer Downloads] - 1.6.0+
+ * [Packer Downloads] - 1.7.0+
  * [Orka CLI Downloads] - 1.3.0+
 
 ## Install / Setup
