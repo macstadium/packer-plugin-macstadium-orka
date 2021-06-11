@@ -3,15 +3,21 @@ package orka
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/hashicorp/hcl/v2/hcldec"
 	"github.com/hashicorp/packer-plugin-sdk/multistep/commonsteps"
-	"github.com/hashicorp/packer-plugin-sdk/communicator"
+	// "github.com/hashicorp/packer-plugin-sdk/communicator"
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
+	"github.com/macstadium/packer-plugin-macstadium-orka/mocks"
 )
 
 const BuilderId = "orka"
+
+type HttpClient interface {
+    Do(req *http.Request) (*http.Response, error)
+}
 
 // Builder ...
 type Builder struct {
@@ -40,21 +46,30 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 	state.Put("hook", hook)
 	state.Put("ui", ui)
 
+	// Check if mock block is empty
+	if b.config.Mock == (MockOptions{}) {
+		state.Put("client", &http.Client{})
+	} else {
+		ui.Say("Triggered Mock")
+		// ErrorType := b.config.Mock.ErrorType
+		state.Put("client", &mocks.ClientMock{})
+	}
+
 	// Create our step pipeline.
 	steps := []multistep.Step{
 		new(stepOrkaCreate),
 	}
 
-	// Add our SSH Communicator after our steps.
-	steps = append(
-		steps,
-		&communicator.StepConnect{
-			Config:    &b.config.CommConfig,
-			Host:      CommHost(b.config.CommConfig.Host()),
-			SSHPort:   CommPort(b.config.CommConfig.Port()),
-			SSHConfig: b.config.CommConfig.SSHConfigFunc(),
-		},
-	)
+	// // Add our SSH Communicator after our steps.
+	// steps = append(
+	// 	steps,
+	// 	&communicator.StepConnect{
+	// 		Config:    &b.config.CommConfig,
+	// 		Host:      CommHost(b.config.CommConfig.Host()),
+	// 		SSHPort:   CommPort(b.config.CommConfig.Port()),
+	// 		SSHConfig: b.config.CommConfig.SSHConfigFunc(),
+	// 	},
+	// )
 
 	// Add the typical common provisioner after that, then our create image.
 	steps = append(

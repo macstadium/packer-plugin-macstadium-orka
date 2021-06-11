@@ -25,7 +25,7 @@ func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, erro
 	password := config.OrkaPassword
 
 	// HTTP Client.
-	client := &http.Client{}
+	client := state.Get("client").(HttpClient)
 
 	reqData := TokenLoginRequest{user, password}
 	reqDataJSON, _ := json.Marshal(reqData)
@@ -54,10 +54,10 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
 
+	// ui.Say("Calling: " + config.Mock)
 	// ############################
 	// # ORKA API LOGIN FOR TOKEN #
 	// ############################
-
 	ui.Say("Logging into Orka API endpoint")
 
 	token, err := s.createOrkaToken(state)
@@ -77,7 +77,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	state.Put("token", token)
 
 	// HTTP Client.
-	client := &http.Client{}
+	client := state.Get("client").(HttpClient)
 
 	// Builder VM launch image is always the source image. If pre-copy is enabled,
 	// however, it will get replaced with the pre-copied destination image instead
@@ -243,7 +243,7 @@ func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) error {
 	ui := state.Get("ui").(packer.Ui)
 	token := state.Get("token").(string)
 
-	client := &http.Client{}
+	client := state.Get("client").(HttpClient)
 
 	imageDeleteRequestData := ImageDeleteRequest{config.OrkaVMBuilderName}
 	imageDeleteRequestDataJSON, _ := json.Marshal(imageDeleteRequestData)
@@ -316,7 +316,7 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 	ui.Say("Removing builder VM and its configuration...")
 
-	client := &http.Client{}
+	client := state.Get("client").(HttpClient)
 
 	vmPurgeRequestData := VMPurgeRequest{config.OrkaVMBuilderName}
 	vmPurgeRequestDatJSON, _ := json.Marshal(vmPurgeRequestData)

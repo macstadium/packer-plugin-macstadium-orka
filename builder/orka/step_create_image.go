@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
+	// "time"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 )
+
 
 type stepCreateImage struct {
 	failedCommit bool
@@ -33,10 +34,8 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	ui.Say(fmt.Sprintf("Image name is [%s]", config.ImageName))
 
 	// HTTP Client.
-
-	client := &http.Client{
-		Timeout: time.Minute * 30,
-	}
+	client := state.Get("client").(HttpClient)
+	// client.Timeout = time.Minute * 30
 
 	if config.ImagePrecopy {
 		// If we are using the pre-copy logic, then we just re-commit the image back.
