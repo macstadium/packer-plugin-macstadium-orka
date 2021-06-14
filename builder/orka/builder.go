@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2/hcldec"
 	"github.com/hashicorp/packer-plugin-sdk/multistep/commonsteps"
-	// "github.com/hashicorp/packer-plugin-sdk/communicator"
+	"github.com/hashicorp/packer-plugin-sdk/communicator"
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 	"github.com/macstadium/packer-plugin-macstadium-orka/mocks"
@@ -39,6 +39,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 	return nil, warnings, nil
 }
 
+
 func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (packer.Artifact, error) {
 	// Setup the state bag and initial state for the steps.
 	state := new(multistep.BasicStateBag)
@@ -50,9 +51,8 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 	if b.config.Mock == (MockOptions{}) {
 		state.Put("client", &http.Client{})
 	} else {
-		ui.Say("Triggered Mock")
-		// ErrorType := b.config.Mock.ErrorType
-		state.Put("client", &mocks.ClientMock{})
+		ErrorType := b.config.Mock.ErrorType
+		state.Put("client", &mocks.Client{ErrorType: ErrorType})
 	}
 
 	// Create our step pipeline.
@@ -60,22 +60,35 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 		new(stepOrkaCreate),
 	}
 
-	// // Add our SSH Communicator after our steps.
-	// steps = append(
-	// 	steps,
-	// 	&communicator.StepConnect{
-	// 		Config:    &b.config.CommConfig,
-	// 		Host:      CommHost(b.config.CommConfig.Host()),
-	// 		SSHPort:   CommPort(b.config.CommConfig.Port()),
-	// 		SSHConfig: b.config.CommConfig.SSHConfigFunc(),
-	// 	},
-	// )
+	// Iniitialize communicatior
+	var comm = &communicator.StepConnect{
+			Config:    &b.config.CommConfig,
+			Host:      CommHost(b.config.CommConfig.Host()),
+			SSHPort:   CommPort(b.config.CommConfig.Port()),
+			SSHConfig: b.config.CommConfig.SSHConfigFunc(),
+	}
 
-	// Add the typical common provisioner after that, then our create image.
-	steps = append(
-		steps,
-		new(commonsteps.StepProvision),
-		new(stepCreateImage))
+
+	// Add our SSH Communicator after our steps.
+	if b.config.Mock == (MockOptions{}) {
+		steps = append(
+			steps,
+			comm,
+			new(commonsteps.StepProvision),
+			new(stepCreateImage),
+		)
+	} else {
+		MockComm := &mocks.StepConnect{
+			Host: b.config.CommConfig.Host(),
+		}
+		steps = append(
+			steps,
+			MockComm,
+			new(mocks.StepProvision),
+			new(stepCreateImage),
+		)
+
+	}
 
 	// Run!
 	b.runner = commonsteps.NewRunner(steps, b.config.PackerConfig, ui)

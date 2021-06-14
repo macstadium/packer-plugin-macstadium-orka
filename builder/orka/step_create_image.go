@@ -35,7 +35,6 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 	// HTTP Client.
 	client := state.Get("client").(HttpClient)
-	// client.Timeout = time.Minute * 30
 
 	if config.ImagePrecopy {
 		// If we are using the pre-copy logic, then we just re-commit the image back.

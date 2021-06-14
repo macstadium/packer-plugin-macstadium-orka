@@ -31,4 +31,11 @@ build {
   sources = [
     "macstadium-orka.image"
   ]
+   provisioner "shell" {
+    inline = [
+      "echo we are running on the remote host",
+      "hostname",
+      "touch .we-ran-packer-successfully"
+    ]
+  }
 }
