@@ -11,7 +11,7 @@ variable "ORKA_PASSWORD" {
   default = env("ORKA_ENDPOINT")
 }
 variable "ORKA_IMAGE_NAME_PREFIX" {
-  default = "victor"
+  default = "packer"
 }
 
 source "macstadium-orka" "image" {
@@ -24,7 +24,6 @@ source "macstadium-orka" "image" {
   simulate_create = false
   no_create_image = false
   no_delete_vm    = false
-  mock { error_type = "none" }
 }
 
 build {

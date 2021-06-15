@@ -8,6 +8,7 @@ source "macstadium-orka" "image" {
 	simulate_create = false
 	no_create_image = false
 	no_delete_vm    = false
+	mock { error_type = "none" }
 }
 
 build {

@@ -42,6 +42,11 @@ func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, erro
 		return "", e
 	}
 
+	if resp.StatusCode != 200 {
+		e := fmt.Errorf("%s", resp.Status)
+		return "", e
+	}
+
 	var respData TokenLoginResponse
 	respBodyBytes, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(respBodyBytes, &respData)
@@ -54,7 +59,6 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	config := state.Get("config").(*Config)
 	ui := state.Get("ui").(packer.Ui)
 
-	// ui.Say("Calling: " + config.Mock)
 	// ############################
 	// # ORKA API LOGIN FOR TOKEN #
 	// ############################
@@ -339,6 +343,7 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 	if vmPurgeResponse.StatusCode != 200 {
 		ui.Error(fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, vmPurgeResponse.Status).Error())
+		state.Put("error", err)
 	} else {
 		ui.Say("Builder VM and configuration purged")
 	}
@@ -363,6 +368,7 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 	if revokeTokenResponse.StatusCode != 200 {
 		ui.Error(fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, revokeTokenResponse.Status).Error())
+		state.Put("error", err)
 	} else {
 		ui.Say("Revoked orka user token")
 	}
