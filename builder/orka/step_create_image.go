@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	// "time"
+	"time"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
@@ -24,6 +24,9 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	ui := state.Get("ui").(packer.Ui)
 	vmid := state.Get("vmid").(string)
 	token := state.Get("token").(string)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+
+	defer cancel()
 
 	if config.NoCreateImage {
 		ui.Say("Skipping image creation because of 'no_create_image' being set")
@@ -44,7 +47,8 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 		imageCommitRequestData := ImageCommitRequest{vmid}
 		imageCommitRequestDataJSON, _ := json.Marshal(imageCommitRequestData)
-		imageCommitRequest, err := http.NewRequest(
+		imageCommitRequest, err := http.NewRequestWithContext(
+			ctx,
 			http.MethodPost,
 			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/commit"),
 			bytes.NewBuffer(imageCommitRequestDataJSON),
@@ -84,7 +88,8 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 		imageSaveRequestData := ImageSaveRequest{vmid, config.ImageName}
 		imageSaveRequestDataJSON, _ := json.Marshal(imageSaveRequestData)
-		imageSaveRequest, err := http.NewRequest(
+		imageSaveRequest, err := http.NewRequestWithContext(
+			ctx,
 			http.MethodPost,
 			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/save"),
 			bytes.NewBuffer(imageSaveRequestDataJSON),

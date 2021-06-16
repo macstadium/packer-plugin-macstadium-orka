@@ -47,12 +47,6 @@ func TestBuilder_ImplementsBuilder(t *testing.T) {
 	}
 }
 
-func TestBuilder_Env(t *testing.T) {
-	if os.Getenv("PACKER_ACC") != "1" {
-		t.Skip("This test is only run with PACKER_ACC=1")
-	}
-}
-
 func ErrorMockHCL(Bool string, ErrorType string) string {
 	return fmt.Sprintf(
 		`source "macstadium-orka" "image" {
