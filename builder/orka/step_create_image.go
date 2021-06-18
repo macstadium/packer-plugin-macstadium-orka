@@ -9,9 +9,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hashicorp/packer/helper/multistep"
-	"github.com/hashicorp/packer/packer"
+	"github.com/hashicorp/packer-plugin-sdk/multistep"
+	"github.com/hashicorp/packer-plugin-sdk/packer"
 )
+
 
 type stepCreateImage struct {
 	failedCommit bool
@@ -23,6 +24,9 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	ui := state.Get("ui").(packer.Ui)
 	vmid := state.Get("vmid").(string)
 	token := state.Get("token").(string)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+
+	defer cancel()
 
 	if config.NoCreateImage {
 		ui.Say("Skipping image creation because of 'no_create_image' being set")
@@ -33,10 +37,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	ui.Say(fmt.Sprintf("Image name is [%s]", config.ImageName))
 
 	// HTTP Client.
-
-	client := &http.Client{
-		Timeout: time.Minute * 30,
-	}
+	client := state.Get("client").(HttpClient)
 
 	if config.ImagePrecopy {
 		// If we are using the pre-copy logic, then we just re-commit the image back.
@@ -46,7 +47,8 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 		imageCommitRequestData := ImageCommitRequest{vmid}
 		imageCommitRequestDataJSON, _ := json.Marshal(imageCommitRequestData)
-		imageCommitRequest, err := http.NewRequest(
+		imageCommitRequest, err := http.NewRequestWithContext(
+			ctx,
 			http.MethodPost,
 			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/commit"),
 			bytes.NewBuffer(imageCommitRequestDataJSON),
@@ -86,7 +88,8 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 		imageSaveRequestData := ImageSaveRequest{vmid, config.ImageName}
 		imageSaveRequestDataJSON, _ := json.Marshal(imageSaveRequestData)
-		imageSaveRequest, err := http.NewRequest(
+		imageSaveRequest, err := http.NewRequestWithContext(
+			ctx,
 			http.MethodPost,
 			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/save"),
 			bytes.NewBuffer(imageSaveRequestDataJSON),

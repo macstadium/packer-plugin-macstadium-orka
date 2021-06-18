@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/hashicorp/packer/helper/multistep"
-	"github.com/hashicorp/packer/packer"
+	"github.com/hashicorp/packer-plugin-sdk/multistep"
+	"github.com/hashicorp/packer-plugin-sdk/packer"
 )
 
 type stepOrkaCreate struct {
@@ -25,7 +25,7 @@ func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, erro
 	password := config.OrkaPassword
 
 	// HTTP Client.
-	client := &http.Client{}
+	client := state.Get("client").(HttpClient)
 
 	reqData := TokenLoginRequest{user, password}
 	reqDataJSON, _ := json.Marshal(reqData)
@@ -39,6 +39,11 @@ func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, erro
 
 	if err != nil {
 		e := fmt.Errorf("Error while logging into the Orka API: %s", err)
+		return "", e
+	}
+
+	if resp.StatusCode != 200 {
+		e := fmt.Errorf("%s", resp.Status)
 		return "", e
 	}
 
@@ -57,7 +62,6 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	// ############################
 	// # ORKA API LOGIN FOR TOKEN #
 	// ############################
-
 	ui.Say("Logging into Orka API endpoint")
 
 	token, err := s.createOrkaToken(state)
@@ -77,7 +81,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	state.Put("token", token)
 
 	// HTTP Client.
-	client := &http.Client{}
+	client := state.Get("client").(HttpClient)
 
 	// Builder VM launch image is always the source image. If pre-copy is enabled,
 	// however, it will get replaced with the pre-copied destination image instead
@@ -243,7 +247,7 @@ func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) error {
 	ui := state.Get("ui").(packer.Ui)
 	token := state.Get("token").(string)
 
-	client := &http.Client{}
+	client := state.Get("client").(HttpClient)
 
 	imageDeleteRequestData := ImageDeleteRequest{config.OrkaVMBuilderName}
 	imageDeleteRequestDataJSON, _ := json.Marshal(imageDeleteRequestData)
@@ -316,7 +320,7 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 	ui.Say("Removing builder VM and its configuration...")
 
-	client := &http.Client{}
+	client := state.Get("client").(HttpClient)
 
 	vmPurgeRequestData := VMPurgeRequest{config.OrkaVMBuilderName}
 	vmPurgeRequestDatJSON, _ := json.Marshal(vmPurgeRequestData)
@@ -325,6 +329,8 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/purge"),
 		bytes.NewBuffer(vmPurgeRequestDatJSON),
 	)
+
+
 	vmPurgeRequest.Header.Set("Content-Type", "application/json")
 	vmPurgeRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	vmPurgeResponse, err := client.Do(vmPurgeRequest)
@@ -337,7 +343,33 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 	if vmPurgeResponse.StatusCode != 200 {
 		ui.Error(fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, vmPurgeResponse.Status).Error())
+		state.Put("error", err)
 	} else {
 		ui.Say("Builder VM and configuration purged")
+	}
+
+	ui.Say("Revoking orka user token")
+
+	revokeTokenRequest, err := http.NewRequest(
+		http.MethodDelete,
+		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "token"),
+		nil,
+	)
+
+	revokeTokenRequest.Header.Set("Content-Type", "application/json")
+	revokeTokenRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	revokeTokenResponse, err := client.Do(revokeTokenRequest)
+
+	if err != nil {
+		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
+		ui.Error(e.Error())
+		state.Put("error", err)
+	}
+
+	if revokeTokenResponse.StatusCode != 200 {
+		ui.Error(fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, revokeTokenResponse.Status).Error())
+		state.Put("error", err)
+	} else {
+		ui.Say("Revoked orka user token")
 	}
 }

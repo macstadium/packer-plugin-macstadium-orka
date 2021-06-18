@@ -1,4 +1,4 @@
-//go:generate mapstructure-to-hcl2 -type Config
+//go:generate packer-sdc mapstructure-to-hcl2 -type Config,MockOptions
 
 package orka
 
@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp/packer/common"
-	"github.com/hashicorp/packer/helper/communicator"
-	"github.com/hashicorp/packer/helper/config"
-	"github.com/hashicorp/packer/packer"
-	"github.com/hashicorp/packer/template/interpolate"
+	"github.com/hashicorp/packer-plugin-sdk/common"
+	"github.com/hashicorp/packer-plugin-sdk/communicator"
+	"github.com/hashicorp/packer-plugin-sdk/template/config"
+	"github.com/hashicorp/packer-plugin-sdk/packer"
+	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 )
 
 const (
@@ -48,6 +48,7 @@ type Config struct {
 	// while the build is running. This was done as a workaround in Orka since the save
 	// API method did not actually copy over the base image contents.
 	ImagePrecopy bool `mapstructure:"image_precopy" required:"false"`
+	Mock	MockOptions `mapstructure:"mock" required:"false"`
 
 	// Do not image after completion, for some manual testing, for internal dev/testing.
 	NoCreateImage bool `mapstructure:"no_create_image"`
@@ -57,6 +58,10 @@ type Config struct {
 
 	// Enable Boost IO Performance https://orkadocs.macstadium.com/docs/boost-io-performance
 	OrkaVMBuilderEnableIOBoost bool `mapstructure:"orka_enable_io_boost"`
+}
+
+type MockOptions struct {
+	ErrorType string `mapstructure:"error_type" required:"true"`
 }
 
 func (c *Config) Prepare(raws ...interface{}) ([]string, error) {

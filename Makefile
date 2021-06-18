@@ -1,7 +1,7 @@
-PREFIX := github.com/lumoslabs/packer-builder-macstadium-orka
+PREFIX := github.com/macstadium/packer-plugin-macstadium-orka
 VERSION := $(shell git describe --tags --candidates=1 --dirty 2>/dev/null || echo "dev")
 FLAGS := -X main.Version=$(VERSION)
-BIN := packer-builder-macstadium-orka
+BIN := packer-plugin-macstadium-orka
 SOURCES := $(shell find . -name '*.go')
 GOOS ?= darwin
 
@@ -13,23 +13,24 @@ test:
 build: $(BIN)
 
 $(BIN): $(SOURCES)
-	GOBIN=$(shell pwd) go install github.com/hashicorp/packer/cmd/mapstructure-to-hcl2
+	GOBIN=$(shell pwd) go install github.com/hashicorp/packer-plugin-sdk/cmd/packer-sdc@latest
 	PATH=$(shell pwd):${PATH} go generate builder/orka/config.go
 	go build -ldflags="$(FLAGS)" -o $(BIN) $(PREFIX)
 
 install: $(BIN)
 	mkdir -p ~/.packer.d/plugins/
-	cp $(BIN) ~/.packer.d/plugins/
+	mv $(BIN) ~/.packer.d/plugins/
 
 packer-build-example:
-	PACKER_LOG=1 packer build -on-error=ask examples/macos-bigsur.json
+	PACKER_LOG=1 packer build -on-error=ask examples/orka.pkr.hcl
 
 packer-build-example-non-debug:
-	packer build examples/macos-bigsur.json
+	packer build examples/orka.pkr.hcl
 
-fresh: clean build install packer-build-example-non-debug
+fresh: clean build install packer-build-example-non-debug clean
 
-rebuild: clean build install
+rebuild: build install clean
 
 clean:
 	rm -f $(BIN)
+	rm -f packer-sdc

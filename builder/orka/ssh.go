@@ -1,7 +1,7 @@
 package orka
 
 import (
-	"github.com/hashicorp/packer/helper/multistep"
+	"github.com/hashicorp/packer-plugin-sdk/multistep"
 )
 
 func CommHost(host string) func(multistep.StateBag) (string, error) {
