@@ -1,6 +1,6 @@
 # Packer Builder for Orka
 
-This is a [Packer Builder] to automate building images for [MacStadium Orka] a Kubernetes/Docker-based macOS virtualization PaaS/SaaS service by [MacStadium].
+This is a [Packer Plugin](https://www.packer.io/docs/plugins) to automate building images for [MacStadium Orka](https://www.macstadium.com/orka), a Kubernetes/Docker-based macOS virtualization PaaS/SaaS service by [MacStadium](https://www.macstadium.com/).
 
 ## Installation
 
