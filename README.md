@@ -64,7 +64,7 @@ documentation located in the [`docs/`](docs) directory.
 
 ## Original Author / License
 
-This plugin is "very-loosely" based-on and took inspiration from the [Packer Null Builder], [Packer LXD Builder], and the [Packer Builder Veertu Anka].
+This plugin is "very-loosely" based-on and took inspiration from the [Packer Null Builder] and [Packer LXD Plugin].  
 
 * Written by [Farley Farley] ( farley _at_ neonsurge **dawt** com )
 * License Terms: [GNU GPL v3]
@@ -72,6 +72,5 @@ This plugin is "very-loosely" based-on and took inspiration from the [Packer Nul
 [//]: <> (Ignore, below here are links for ease-of-use above)
 [Farley Farley]: https://github.com/andrewfarley
 [GNU GPL v3]: https://choosealicense.com/licenses/gpl-3.0/
-[Packer Builder Veertu Anka]: https://github.com/veertuinc/packer-builder-veertu-anka
 [Packer Null Builder]: https://github.com/hashicorp/packer/tree/master/builder/null
 [Packer LXD Plugin]: https://github.com/hashicorp/packer-plugin-lxd

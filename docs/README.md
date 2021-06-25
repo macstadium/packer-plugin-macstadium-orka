@@ -23,7 +23,7 @@ packer {
 ```
 
 
-#### Manual installation
+### Manual installation
 
 You can find pre-built binary releases of the plugin [here](https://github.com/macstadium/packer-plugin-macstadium-orka/releases).
 Once you have downloaded the latest archive corresponding to your target OS,
