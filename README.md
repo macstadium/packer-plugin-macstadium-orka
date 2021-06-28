@@ -57,7 +57,7 @@ documentation located in the [`docs/`](docs) directory.
   this GitHub repository.
 * Contributions to this project are welcome: if you want to add a feature or a
   fix a bug, please do so by opening a Pull Request in this GitHub repository.
-  In case of feature contribution, we kindly ask you to open an issue to
+  In case of feature contribution, we kindly ask you to [open an issue](https://github.com/macstadium/packer-plugin-macstadium-orka/issues) to
   discuss it beforehand.
 
 * For more information on contributing, please view [`CONTRIBUTING.md`](CONTRIBUTING.md) 
