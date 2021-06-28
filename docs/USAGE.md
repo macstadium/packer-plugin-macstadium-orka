@@ -2,7 +2,7 @@
   
 ## Packer Template:
 
-In order to use the orka packer plugin, you will have to define a packer template file.  The packer template file is the configuration   
+In order to use the Orka packer plugin, you will have to define a packer template file.  The packer template file is the configuration   
 file that is used to define how to build an orka image.  You can either use JSON or HCL to create the template. Because Packer recommends  
 using HCL, this document will only cover an HCL implementation. To learn more about JSON templates, please visit [here](https://www.packer.io/docs/templates/legacy_json_templates).    
 
