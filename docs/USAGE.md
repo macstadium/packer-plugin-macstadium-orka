@@ -96,6 +96,8 @@ build {
 
 Save this as file named orka.pkr.hcl.  You can actually call this any name you want to but you have to make sure the file ends in the suffix pkr.hcl or else it will not work.    
 
+Ensure you are connected to your Orka cluster via [VPN](https://orkadocs.macstadium.com/v1.2.0/docs/vpn-connect)  
+
 To initialize and download the plugin use this command:  
 `packer init orka.pkr.hcl`  
 
