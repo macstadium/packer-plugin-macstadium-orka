@@ -1,4 +1,4 @@
-# Packer Builder for Orka
+# Packer Plugin for Orka
 
 This is a [Packer Plugin](https://www.packer.io/docs/plugins) to automate building images for [MacStadium Orka](https://www.macstadium.com/orka), a Kubernetes/Docker-based macOS virtualization PaaS/SaaS service by [MacStadium](https://www.macstadium.com/).
 
@@ -45,12 +45,10 @@ binary file can be found in the root directory.
 To install the compiled plugin, please follow the official Packer documentation
 on [installing a plugin](https://www.packer.io/docs/extending/plugins/#installing-plugins).
 
-
 ### Configuration
 
 For more information on how to configure the plugin, please read the
 documentation located in the [`docs/`](docs) directory.
-
 
 ## Contributing
 
@@ -59,5 +57,20 @@ documentation located in the [`docs/`](docs) directory.
   this GitHub repository.
 * Contributions to this project are welcome: if you want to add a feature or a
   fix a bug, please do so by opening a Pull Request in this GitHub repository.
-  In case of feature contribution, we kindly ask you to open an issue to
+  In case of feature contribution, we kindly ask you to [open an issue](https://github.com/macstadium/packer-plugin-macstadium-orka/issues) to
   discuss it beforehand.
+
+* For more information on contributing, please view [`CONTRIBUTING.md`](CONTRIBUTING.md) 
+
+## Original Author / License
+
+This plugin is "very-loosely" based-on and took inspiration from the [Packer Null Builder] and [Packer LXD Plugin].  
+
+* Written by [Farley Farley] ( farley _at_ neonsurge **dawt** com )
+* License Terms: [GNU GPL v3]
+
+[//]: <> (Ignore, below here are links for ease-of-use above)
+[Farley Farley]: https://github.com/andrewfarley
+[GNU GPL v3]: https://choosealicense.com/licenses/gpl-3.0/
+[Packer Null Builder]: https://github.com/hashicorp/packer/tree/master/builder/null
+[Packer LXD Plugin]: https://github.com/hashicorp/packer-plugin-lxd
