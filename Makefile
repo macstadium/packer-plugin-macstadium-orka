@@ -19,9 +19,7 @@ $(BIN): $(SOURCES)
 
 install: $(BIN)
 	mkdir -p ~/.packer.d/plugins/
-	mkdir -p /usr/local/bin/github.com/macstadium/macstadium-orka/
 	cp $(BIN) ~/.packer.d/plugins/
-	cp $(BIN) /usr/local/bin/github.com/macstadium/macstadium-orka/$(BIN)_v2.3.0_x5.0_darwin_amd64
 
 packer-build-example:
 	PACKER_LOG=1 packer build -on-error=ask examples/orka.pkr.hcl
