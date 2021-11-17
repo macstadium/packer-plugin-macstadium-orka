@@ -234,7 +234,10 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		sshHost = config.OrkaNodeIPMap[vmDeployResponseData.IP]
 
 		if sshHost == "" {
-			panic(fmt.Sprintf("VM IP[%s] is not tracked in the provided node ip map. Please provide a mapping for this VM!", vmDeployResponseData.IP))
+			e := fmt.Errorf("VM IP[%s] is not tracked in the provided node ip map. Please provide a mapping for this VM!", vmDeployResponseData.IP)
+			ui.Error(e.Error())
+			state.Put("error", e)
+			return multistep.ActionHalt
 		}
 
 		ui.Say(fmt.Sprintf("Found Internal VM IP in map [%s -> %s]", vmDeployResponseData.IP, sshHost))

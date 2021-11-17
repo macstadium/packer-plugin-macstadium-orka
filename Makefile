@@ -19,7 +19,7 @@ $(BIN): $(SOURCES)
 
 install: $(BIN)
 	mkdir -p ~/.packer.d/plugins/
-	cp $(BIN) ~/.packer.d/plugins/
+	mv $(BIN) ~/.packer.d/plugins/
 
 packer-build-example:
 	PACKER_LOG=1 packer build -on-error=ask examples/orka.pkr.hcl
