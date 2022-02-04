@@ -9,8 +9,8 @@ import (
 
 	"github.com/hashicorp/packer-plugin-sdk/common"
 	"github.com/hashicorp/packer-plugin-sdk/communicator"
-	"github.com/hashicorp/packer-plugin-sdk/template/config"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
+	"github.com/hashicorp/packer-plugin-sdk/template/config"
 	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 )
 
@@ -47,8 +47,8 @@ type Config struct {
 	// have ran. This moves the copy logic up-front but also consumes more disk space
 	// while the build is running. This was done as a workaround in Orka since the save
 	// API method did not actually copy over the base image contents.
-	ImagePrecopy bool `mapstructure:"image_precopy" required:"false"`
-	Mock	MockOptions `mapstructure:"mock" required:"false"`
+	ImagePrecopy bool        `mapstructure:"image_precopy" required:"false"`
+	Mock         MockOptions `mapstructure:"mock" required:"false"`
 
 	// Do not image after completion, for some manual testing, for internal dev/testing.
 	NoCreateImage bool `mapstructure:"no_create_image"`
@@ -58,6 +58,12 @@ type Config struct {
 
 	// Enable Boost IO Performance https://orkadocs.macstadium.com/docs/boost-io-performance
 	OrkaVMBuilderEnableIOBoost bool `mapstructure:"orka_enable_io_boost"`
+
+	// Enable Orka IP Mapping for exposed IP networking
+	EnableOrkaNodeIPMapping bool `mapstructure:"enable_orka_node_ip_mapping"`
+
+	// Required if Enable Orka IP Mapping is enabled. Map of Node Ips to the external IP values.
+	OrkaNodeIPMap map[string]string `mapstructure:"orka_node_ip_map"`
 }
 
 type MockOptions struct {

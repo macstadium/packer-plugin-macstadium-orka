@@ -63,7 +63,6 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	// # ORKA API LOGIN FOR TOKEN #
 	// ############################
 	ui.Say("Logging into Orka API endpoint")
-
 	token, err := s.createOrkaToken(state)
 
 	if err != nil {
@@ -228,15 +227,29 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	state.Put("vmid", vmDeployResponseData.VMId)
 
 	ui.Say(fmt.Sprintf("Created VM [%s]", vmDeployResponseData.VMId))
+
+	sshHost := vmDeployResponseData.IP
+
+	if config.EnableOrkaNodeIPMapping == true {
+		sshHost = config.OrkaNodeIPMap[vmDeployResponseData.IP]
+
+		if sshHost == "" {
+			e := fmt.Errorf("VM IP[%s] is not tracked in the provided node ip map. Please provide a mapping for this VM!", vmDeployResponseData.IP)
+			ui.Error(e.Error())
+			state.Put("error", e)
+			return multistep.ActionHalt
+		}
+
+		ui.Say(fmt.Sprintf("Found Internal VM IP in map [%s -> %s]", vmDeployResponseData.IP, sshHost))
+	}
+
 	ui.Say(fmt.Sprintf("SSH server will be available at [%s:%s]",
-		vmDeployResponseData.IP, vmDeployResponseData.SSHPort))
+		sshHost, vmDeployResponseData.SSHPort))
 
 	// Write to our state databag for pick-up by the ssh communicator.
-
 	sshPort, _ := strconv.Atoi(vmDeployResponseData.SSHPort)
-
 	state.Put("ssh_port", sshPort)
-	state.Put("ssh_host", vmDeployResponseData.IP)
+	state.Put("ssh_host", sshHost)
 
 	// Continue processing
 	return multistep.ActionContinue
@@ -329,7 +342,6 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/purge"),
 		bytes.NewBuffer(vmPurgeRequestDatJSON),
 	)
-
 
 	vmPurgeRequest.Header.Set("Content-Type", "application/json")
 	vmPurgeRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))

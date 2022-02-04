@@ -93,6 +93,13 @@ But, if you are building/editing/updating this software, you may want to turn on
 
 * `do_not_image` _(boolean)_ (optional) _*- for devs*_ By default this plugin automatically creates an image of the VM after any provisioning steps.  This is useful for debugging builds.   
 
+# Advanced Use Cases
+
+The following use cases do not need to be used in most scenarios.
+
+* `enable_orka_node_ip_mapping` _(bool)_ (optional): The plugin defaults to using the default node ips. If this option is set to true, the builder will use the passed in map under `orka_node_ip_map` to resolve ips.
+
+* `orka_node_ip_map` _(map[string]string)_ (optional): Required if `enable_orka_node_ip_mapping`. Map of Internal Node IPs to External Node Ips.
 
 # Information Notes / Gotchas
 
