@@ -31,7 +31,7 @@ source "macstadium-orka" "image" {
   orka_user       = "<USER_NAME>"
   orka_password   = "<PASSWORD>"
   ssh_username    = "<SSH_USERNAME>"
-  ssh_password    = "<SSH_PASSWORD>""
+  ssh_password    = "<SSH_PASSWORD>"
 }
 ```
 The source definition specifies a plugin type to use (in this case “macstadium-orka”) and a label associated with the type ( image”).   This is saying that these variables will   
@@ -78,7 +78,7 @@ source "macstadium-orka" "image" {
   orka_user       = "<USER_NAME>"
   orka_password   = "<PASSWORD>"
   ssh_username    = "<SSH_USERNAME>"
-  ssh_password    = "<SSH_PASSWORD>""
+  ssh_password    = "<SSH_PASSWORD>"
 }
 build {
   sources = [
