@@ -5,10 +5,10 @@ variable "ORKA_ENDPOINT" {
   default = env("ORKA_ENDPOINT")
 }
 variable "ORKA_USER" {
-  default = env("ORKA_ENDPOINT")
+  default = env("ORKA_USER")
 }
 variable "ORKA_PASSWORD" {
-  default = env("ORKA_ENDPOINT")
+  default = env("ORKA_PASSWORD")
 }
 variable "ORKA_IMAGE_NAME_PREFIX" {
   default = "packer"
