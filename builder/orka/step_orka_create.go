@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 )
@@ -29,7 +30,7 @@ func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, erro
 
 	reqData := TokenLoginRequest{user, password}
 	reqDataJSON, _ := json.Marshal(reqData)
-	req, err := http.NewRequest(
+	req, _ := http.NewRequest(
 		http.MethodPost,
 		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "token"),
 		bytes.NewBuffer(reqDataJSON),
@@ -97,7 +98,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 
 			imageCopyRequestData := ImageCopyRequest{config.SourceImage, config.ImageName}
 			imageCopyRequestDataJSON, _ := json.Marshal(imageCopyRequestData)
-			imageCopyRequest, err := http.NewRequest(
+			imageCopyRequest, _ := http.NewRequest(
 				http.MethodPost,
 				fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/copy"),
 				bytes.NewBuffer(imageCopyRequestDataJSON),
@@ -157,7 +158,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		OrkaEnableIOBoost: config.OrkaVMBuilderEnableIOBoost,
 	}
 	vmCreateConfigRequestDataJSON, _ := json.Marshal(vmCreateConfigRequestData)
-	vmCreateConfigRequest, err := http.NewRequest(
+	vmCreateConfigRequest, _ := http.NewRequest(
 		http.MethodPost,
 		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/create"),
 		bytes.NewBuffer(vmCreateConfigRequestDataJSON),
@@ -196,14 +197,14 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 
 	vmDeployRequestData := VMDeployRequest{config.OrkaVMBuilderName}
 	vmDeployRequestDataJSON, _ := json.Marshal(vmDeployRequestData)
-	vmDeployRequest, err := http.NewRequest(
+	vmDeployRequest, _ := http.NewRequest(
 		http.MethodPost,
 		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/deploy"),
 		bytes.NewBuffer(vmDeployRequestDataJSON),
 	)
 	vmDeployRequest.Header.Set("Content-Type", "application/json")
 	vmDeployRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	vmDeployResponse, err := client.Do(vmDeployRequest)
+	vmDeployResponse, _ := client.Do(vmDeployRequest)
 	var vmDeployResponseData VMDeployResponse
 	vmDeployResponseBodyBytes, _ := ioutil.ReadAll(vmDeployResponse.Body)
 	json.Unmarshal(vmDeployResponseBodyBytes, &vmDeployResponseData)
@@ -264,7 +265,7 @@ func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) error {
 
 	imageDeleteRequestData := ImageDeleteRequest{config.OrkaVMBuilderName}
 	imageDeleteRequestDataJSON, _ := json.Marshal(imageDeleteRequestData)
-	imageDeleteRequest, err := http.NewRequest(
+	imageDeleteRequest, _ := http.NewRequest(
 		http.MethodDelete,
 		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/delete"),
 		bytes.NewBuffer(imageDeleteRequestDataJSON),
@@ -337,7 +338,7 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 	vmPurgeRequestData := VMPurgeRequest{config.OrkaVMBuilderName}
 	vmPurgeRequestDatJSON, _ := json.Marshal(vmPurgeRequestData)
-	vmPurgeRequest, err := http.NewRequest(
+	vmPurgeRequest, _ := http.NewRequest(
 		http.MethodDelete,
 		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/vm/purge"),
 		bytes.NewBuffer(vmPurgeRequestDatJSON),
@@ -360,17 +361,15 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 		ui.Say("Builder VM and configuration purged")
 	}
 
-	ui.Say("Revoking orka user token")
+	ui.Say("Checking if token should be revoked")
 
-	revokeTokenRequest, err := http.NewRequest(
-		http.MethodDelete,
-		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "token"),
+	healthCheckRequest, _ := http.NewRequest(
+		http.MethodGet,
+		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "health-check"),
 		nil,
 	)
 
-	revokeTokenRequest.Header.Set("Content-Type", "application/json")
-	revokeTokenRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	revokeTokenResponse, err := client.Do(revokeTokenRequest)
+	healthCheckResponse, err := client.Do(healthCheckRequest)
 
 	if err != nil {
 		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
@@ -378,10 +377,39 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 		state.Put("error", err)
 	}
 
-	if revokeTokenResponse.StatusCode != 200 {
-		ui.Error(fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, revokeTokenResponse.Status).Error())
-		state.Put("error", err)
-	} else {
-		ui.Say("Revoked orka user token")
+	defer healthCheckResponse.Body.Close()
+	var healthCheckResponseData HealthCheckResponse
+	healthCheckResponseBodyBytes, _ := ioutil.ReadAll(healthCheckResponse.Body)
+	json.Unmarshal(healthCheckResponseBodyBytes, &healthCheckResponseData)
+
+	serverVersion, _ := version.NewVersion(healthCheckResponseData.Version)
+	singleTokenVersion, _ := version.NewVersion("2.1.1")
+
+	if serverVersion.LessThanOrEqual(singleTokenVersion) {
+
+		ui.Say("Revoking orka user token")
+
+		revokeTokenRequest, _ := http.NewRequest(
+			http.MethodDelete,
+			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "token"),
+			nil,
+		)
+
+		revokeTokenRequest.Header.Set("Content-Type", "application/json")
+		revokeTokenRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		revokeTokenResponse, err := client.Do(revokeTokenRequest)
+
+		if err != nil {
+			e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
+			ui.Error(e.Error())
+			state.Put("error", err)
+		}
+
+		if revokeTokenResponse.StatusCode != 200 {
+			ui.Error(fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, revokeTokenResponse.Status).Error())
+			state.Put("error", err)
+		} else {
+			ui.Say("Revoked orka user token")
+		}
 	}
 }
