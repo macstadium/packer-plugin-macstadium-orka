@@ -1,6 +1,6 @@
 PREFIX := github.com/macstadium/packer-plugin-macstadium-orka
 VERSION := $(shell git describe --tags --candidates=1 --dirty 2>/dev/null || echo "dev")
-FLAGS := -X main.Version=$(VERSION)
+FLAGS := -X version/version.Version=$(VERSION)
 BIN := packer-plugin-macstadium-orka
 SOURCES := $(shell find . -name '*.go')
 GOOS ?= darwin
@@ -26,6 +26,9 @@ packer-build-example:
 
 packer-build-example-non-debug:
 	packer build examples/orka.pkr.hcl
+
+plugin-check: build
+	PATH=$(shell pwd):${PATH} packer-sdc plugin-check $(BIN)
 
 fresh: clean build install packer-build-example-non-debug clean
 
