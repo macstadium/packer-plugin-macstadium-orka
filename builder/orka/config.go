@@ -57,7 +57,7 @@ type Config struct {
 	NoDeleteVM bool `mapstructure:"no_delete_vm"`
 
 	// Enable Boost IO Performance https://orkadocs.macstadium.com/docs/boost-io-performance
-	OrkaVMBuilderEnableIOBoost bool `mapstructure:"orka_enable_io_boost"`
+	OrkaVMBuilderEnableIOBoost *bool `mapstructure:"orka_enable_io_boost"`
 
 	// Enable Orka IP Mapping for exposed IP networking
 	EnableOrkaNodeIPMapping bool `mapstructure:"enable_orka_node_ip_mapping"`
@@ -137,6 +137,11 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 	// If we didn't specify the number of cores, set it to the default of 3.
 	if c.OrkaVMCPUCore == 0 {
 		c.OrkaVMCPUCore = 3
+	}
+
+	if c.OrkaVMBuilderEnableIOBoost == nil {
+		var defaultIOBoostValue = true
+		c.OrkaVMBuilderEnableIOBoost = &defaultIOBoostValue
 	}
 
 	if es := c.CommConfig.Prepare(nil); len(es) > 0 {
