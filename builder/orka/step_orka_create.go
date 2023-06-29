@@ -177,7 +177,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	json.Unmarshal(vmCreateConfigResponseBytes, &vmCreateConfigResponseData)
 	vmCreateConfigResponse.Body.Close()
 
-	if vmCreateConfigResponse.StatusCode != 201 {
+	if vmCreateConfigResponse.StatusCode != http.StatusCreated {
 		e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, vmCreateConfigResponse.Status)
 		ui.Error(e.Error())
 		state.Put("error", e)
