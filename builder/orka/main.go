@@ -40,6 +40,7 @@ type VMCreateRequest struct {
 	OrkaCPUCore       int    `json:"orka_cpu_core"`
 	VCPUCount         int    `json:"vcpu_count"`
 	OrkaEnableIOBoost bool   `json:"io_boost"`
+	OrkaVMTag         string `json:"orka_vm_tag"`
 }
 
 type VMCreateResponse struct {

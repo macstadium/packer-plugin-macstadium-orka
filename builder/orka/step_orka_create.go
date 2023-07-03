@@ -155,6 +155,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		OrkaCPUCore:       config.OrkaVMCPUCore,
 		VCPUCount:         config.OrkaVMCPUCore,
 		OrkaEnableIOBoost: config.OrkaVMBuilderEnableIOBoost,
+		OrkaVMTag:         config.OrkaVMTag,
 	}
 	vmCreateConfigRequestDataJSON, _ := json.Marshal(vmCreateConfigRequestData)
 	vmCreateConfigRequest, err := http.NewRequest(
