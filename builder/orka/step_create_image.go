@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 )
 
-
 type stepCreateImage struct {
 	failedCommit bool
 	failedSave   bool
@@ -70,7 +69,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		json.Unmarshal(imageCommitResponseBytes, &imageCommitResponseData)
 		imageCommitResponse.Body.Close()
 
-		if imageCommitResponse.StatusCode != 200 {
+		if imageCommitResponse.StatusCode != http.StatusOK {
 			s.failedCommit = true
 			e := fmt.Errorf("Error committing image [%s]", imageCommitResponse.Status)
 			ui.Error(e.Error())
@@ -111,7 +110,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		json.Unmarshal(imageSaveResponseBytes, &imageSaveResponseData)
 		imageSaveResponse.Body.Close()
 
-		if imageSaveResponse.StatusCode != 200 {
+		if imageSaveResponse.StatusCode != http.StatusOK {
 			s.failedSave = true
 			e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, imageSaveResponse.Status)
 			ui.Error(e.Error())
