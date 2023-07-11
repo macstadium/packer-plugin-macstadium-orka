@@ -81,7 +81,9 @@ build {
 
 * `orka_vm_cpu_core` _(int)_ (optional):  Number of cpu cores to use with the virtual machine.  
 
-* `image_precopy` _(bool)_ (optional): The plugin defaults to using image save.  If this option is set to true, the builder will copy the base image, launch a VM from the copy, then commit to the new image.
+* `orka_vm_tag` _(string)_ (optional): Image tag name for the builder VM
+
+* `image_precopy` _(bool)_ (optional): The plugin defaults to using image save.  If this option is set to true, the builder will commit the image and perform an image copy. 
 
 # Development / Internal Variables
 
