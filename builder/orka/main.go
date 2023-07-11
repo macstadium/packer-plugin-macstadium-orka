@@ -95,5 +95,9 @@ type VMStopResponse struct {
 	Message string `json:"message"`
 }
 
+type HealthCheckResponse struct {
+	Version string `json:"api_version"`
+}
+
 const OrkaAPIRequestErrorMessage = "Error making request to Orka API"
 const OrkaAPIResponseErrorMessage = "Error from Orka API"
