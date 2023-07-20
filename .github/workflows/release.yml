@@ -36,8 +36,10 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.NEW_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.NEW_PASSPHRASE }}
+      - name: Run tests
+        run: go test ./...
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v3
         with:
           version: latest
           args: build --clean --verbose
