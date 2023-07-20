@@ -37,9 +37,9 @@ jobs:
           gpg_private_key: ${{ secrets.NEW_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.NEW_PASSPHRASE }}
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v4
         with:
-          version: v1.16.0
+          version: latest
           args: release --rm-dist
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
