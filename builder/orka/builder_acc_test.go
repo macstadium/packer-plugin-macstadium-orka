@@ -37,6 +37,7 @@ var ErrorTypes = map[string]string{
 	"ImageSave":   "false",
 	"ImageCopy":   "true",
 	"ImageCommit": "true",
+	"HealthCheck": "false",
 }
 
 func TestBuilder_ImplementsBuilder(t *testing.T) {
