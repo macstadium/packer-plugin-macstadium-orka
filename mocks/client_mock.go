@@ -90,11 +90,11 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 		}
 		json := `{"message":"Successfully purged VM", "errors": []}`
 		return Response(req, json, http.StatusOK, "200 OK")
-	case "/health-check":
+	case "/health-check:GET":
 		if c.ErrorType == "HealthCheck" {
 			return Response(req, jsonError, http.StatusInternalServerError, "500 Internal Server Error")
 		}
-		json := `{"api_version":"2.4.0", "errors": []}`
+		json := `{"api_version":"2.4.0"}`
 		return Response(req, json, http.StatusOK, "200 OK")
 
 	}
