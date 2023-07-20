@@ -36,6 +36,8 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.NEW_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.NEW_PASSPHRASE }}
+      - name: Build
+        run: make build
       - name: Run tests
         run: go test ./... -v
       - name: Run GoReleaser
