@@ -61,6 +61,14 @@ documentation located in the [`docs/`](docs) directory.
   discuss it beforehand.
 
 * For more information on contributing, please view [`CONTRIBUTING.md`](CONTRIBUTING.md) 
+## Release the plugin
+
+To release the plugin, follow the steps below:
+
+- create a tag `vXX.XX.XX` from the `main` branch
+- ensure the [`release` workflow](https://github.com/macstadium/packer-plugin-macstadium-orka/actions/workflows/release.yml) has started
+- when the release action is complete, go to the [created release](https://github.com/macstadium/packer-plugin-macstadium-orka/releases) and fill in the release notes
+- update [CHANGELOG.md](CHANGELOG.md)
 
 ## Original Author / License
 
