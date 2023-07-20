@@ -36,15 +36,11 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.NEW_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.NEW_PASSPHRASE }}
-      - name: Build
-        run: make build
-      - name: Run tests
-        run: go test ./... -v
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
           version: latest
-          args: build --clean --verbose
+          args: release --clean --verbose
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
