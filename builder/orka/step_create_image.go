@@ -46,7 +46,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 		imageCommitRequestData := ImageCommitRequest{vmid}
 		imageCommitRequestDataJSON, _ := json.Marshal(imageCommitRequestData)
-		imageCommitRequest, err := http.NewRequestWithContext(
+		imageCommitRequest, _ := http.NewRequestWithContext(
 			ctx,
 			http.MethodPost,
 			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/commit"),
@@ -60,7 +60,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 			s.failedCommit = true
 			e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 			ui.Error(e.Error())
-			state.Put("error", err)
+			state.Put("error", e)
 			return multistep.ActionHalt
 		}
 
@@ -73,7 +73,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 			s.failedCommit = true
 			e := fmt.Errorf("Error committing image [%s]", imageCommitResponse.Status)
 			ui.Error(e.Error())
-			state.Put("error", err)
+			state.Put("error", e)
 			return multistep.ActionHalt
 		}
 
@@ -87,7 +87,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 		imageSaveRequestData := ImageSaveRequest{vmid, config.ImageName}
 		imageSaveRequestDataJSON, _ := json.Marshal(imageSaveRequestData)
-		imageSaveRequest, err := http.NewRequestWithContext(
+		imageSaveRequest, _ := http.NewRequestWithContext(
 			ctx,
 			http.MethodPost,
 			fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/save"),
@@ -101,7 +101,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 			s.failedSave = true
 			e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 			ui.Error(e.Error())
-			state.Put("error", err)
+			state.Put("error", e)
 			return multistep.ActionHalt
 		}
 
@@ -114,7 +114,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 			s.failedSave = true
 			e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, imageSaveResponse.Status)
 			ui.Error(e.Error())
-			state.Put("error", err)
+			state.Put("error", e)
 			return multistep.ActionHalt
 		}
 
