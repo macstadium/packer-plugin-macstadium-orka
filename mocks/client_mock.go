@@ -95,7 +95,9 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 		if c.ErrorType == "HealthCheck" {
 			return Response(req, jsonError, http.StatusInternalServerError, "500 Internal Server Error")
 		}
-		json := `{"api_version":"2.4.0"}`
+		json := `{
+			"api_version": "2.0.0"
+		}`
 		return Response(req, json, http.StatusOK, "200 OK")
 
 	}
