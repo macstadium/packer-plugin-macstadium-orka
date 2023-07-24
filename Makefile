@@ -14,7 +14,7 @@ build: $(BIN)
 
 $(BIN): $(SOURCES)
 	GOBIN=$(shell pwd) go install github.com/hashicorp/packer-plugin-sdk/cmd/packer-sdc@latest
-	PATH=$(shell pwd):${PATH} go generate builder/orka/config.go
+	PATH="$(shell pwd):${PATH}" go generate builder/orka/config.go
 	go build -ldflags="$(FLAGS)" -o $(BIN) $(PREFIX)
 
 install: $(BIN)
