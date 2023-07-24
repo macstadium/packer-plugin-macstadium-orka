@@ -43,6 +43,8 @@ func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, erro
 		return "", e
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		e := fmt.Errorf("%s", resp.Status)
 		return "", e
@@ -51,7 +53,6 @@ func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, erro
 	var respData TokenLoginResponse
 	respBodyBytes, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(respBodyBytes, &respData)
-	resp.Body.Close()
 
 	return respData.Token, nil
 }
@@ -115,10 +116,11 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 				return multistep.ActionHalt
 			}
 
+			defer imageCopyResponse.Body.Close()
+
 			var imageCopyResponseData ImageCopyResponse
 			imageCopyResponseBytes, _ := ioutil.ReadAll(imageCopyResponse.Body)
 			json.Unmarshal(imageCopyResponseBytes, &imageCopyResponseData)
-			imageCopyResponse.Body.Close()
 
 			if imageCopyResponse.StatusCode != http.StatusOK {
 				e := fmt.Errorf("Error from API: %s", imageCopyResponse.Status)
@@ -155,7 +157,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		OrkaImage:         config.OrkaVMBuilderName,
 		OrkaCPUCore:       config.OrkaVMCPUCore,
 		VCPUCount:         config.OrkaVMCPUCore,
-    		OrkaEnableIOBoost: *config.OrkaVMBuilderEnableIOBoost,
+		OrkaEnableIOBoost: *config.OrkaVMBuilderEnableIOBoost,
 		OrkaVMTag:         config.OrkaVMTag,
 	}
 	vmCreateConfigRequestDataJSON, _ := json.Marshal(vmCreateConfigRequestData)
@@ -173,10 +175,11 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		return multistep.ActionHalt
 	}
 
+	defer vmCreateConfigResponse.Body.Close()
+
 	var vmCreateConfigResponseData VMCreateResponse
 	vmCreateConfigResponseBytes, _ := ioutil.ReadAll(vmCreateConfigResponse.Body)
 	json.Unmarshal(vmCreateConfigResponseBytes, &vmCreateConfigResponseData)
-	vmCreateConfigResponse.Body.Close()
 
 	if vmCreateConfigResponse.StatusCode != http.StatusCreated {
 		e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, vmCreateConfigResponse.Status)
@@ -205,17 +208,22 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	)
 	vmDeployRequest.Header.Set("Content-Type", "application/json")
 	vmDeployRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	vmDeployResponse, _ := client.Do(vmDeployRequest)
+	vmDeployResponse, err := client.Do(vmDeployRequest)
+
+	if err != nil {
+		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
+		ui.Error(e.Error())
+		state.Put("error", err)
+	}
+
+	defer vmDeployResponse.Body.Close()
 	var vmDeployResponseData VMDeployResponse
 	vmDeployResponseBodyBytes, _ := ioutil.ReadAll(vmDeployResponse.Body)
 	json.Unmarshal(vmDeployResponseBodyBytes, &vmDeployResponseData)
-	vmDeployResponse.Body.Close()
 
 	if vmDeployResponse.StatusCode != http.StatusOK {
-		state.Put(
-			"error",
-			fmt.Errorf("Error from API while deploying Orka VM: %s",
-				vmDeployResponse.Status))
+		e := fmt.Errorf("Error from API while deploying Orka VM: %s", vmDeployResponse.Status)
+		state.Put("error", e)
 		s.createVMFailed = true
 		return multistep.ActionHalt
 	}
@@ -232,7 +240,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 
 	sshHost := vmDeployResponseData.IP
 
-	if config.EnableOrkaNodeIPMapping == true {
+	if config.EnableOrkaNodeIPMapping {
 		sshHost = config.OrkaNodeIPMap[vmDeployResponseData.IP]
 
 		if sshHost == "" {
@@ -278,13 +286,16 @@ func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) error {
 	if err != nil {
 		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 		ui.Error(e.Error())
-		state.Put("error", err)
+		state.Put("error", e)
 		return e
 	}
+
+	defer imageDeleteResponse.Body.Close()
 
 	if imageDeleteResponse.StatusCode != http.StatusOK {
 		e := fmt.Errorf("Image could not be deleted [%s]", imageDeleteResponse.Status)
 		ui.Error(e.Error())
+		state.Put("error", e)
 		return e
 	}
 
@@ -322,6 +333,7 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 			precopyDeleteFailed := s.precopyImageDelete(state)
 
 			if precopyDeleteFailed != nil {
+				ui.Say("Cleaning up pre-copied image failed, check orka cluster for artifacts")
 				return
 			}
 		}
@@ -330,8 +342,6 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 		return
 	}
-
-	// vmid := state.Get("vmid").(string)
 
 	ui.Say("Removing builder VM and its configuration...")
 
@@ -352,12 +362,15 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	if err != nil {
 		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 		ui.Error(e.Error())
-		state.Put("error", err)
+		state.Put("error", e)
 	}
 
+	defer vmPurgeResponse.Body.Close()
+
 	if vmPurgeResponse.StatusCode != http.StatusOK {
-		ui.Error(fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, vmPurgeResponse.Status).Error())
-		state.Put("error", err)
+		e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, vmPurgeResponse.Status)
+		ui.Error(e.Error())
+		state.Put("error", e)
 	} else {
 		ui.Say("Builder VM and configuration purged")
 	}
@@ -375,10 +388,17 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	if err != nil {
 		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 		ui.Error(e.Error())
-		state.Put("error", err)
+		state.Put("error", e)
 	}
 
 	defer healthCheckResponse.Body.Close()
+
+	if healthCheckResponse.StatusCode != http.StatusOK {
+		e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, healthCheckResponse.Status)
+		ui.Error(e.Error())
+		state.Put("error", e)
+	}
+
 	var healthCheckResponseData HealthCheckResponse
 	healthCheckResponseBodyBytes, _ := ioutil.ReadAll(healthCheckResponse.Body)
 	json.Unmarshal(healthCheckResponseBodyBytes, &healthCheckResponseData)
@@ -403,12 +423,15 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 		if err != nil {
 			e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 			ui.Error(e.Error())
-			state.Put("error", err)
+			state.Put("error", e)
 		}
 
+		defer revokeTokenResponse.Body.Close()
+
 		if revokeTokenResponse.StatusCode != http.StatusOK {
-			ui.Error(fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, revokeTokenResponse.Status).Error())
-			state.Put("error", err)
+			e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, revokeTokenResponse.Status)
+			ui.Error(e.Error())
+			state.Put("error", e)
 		} else {
 			ui.Say("Revoked orka user token")
 		}
