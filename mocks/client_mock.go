@@ -11,9 +11,9 @@ import (
 // # 	    ENDPOINTS         #
 // ############################
 /***************************************************
-*	/token  			POST	   *
-*	/token  			DELETE     *
-*   /health-check       GET        *
+*	/token  					POST	   *
+*	/token  		         	DELETE     *
+*   /health-check               GET        *
 *	/resources/image/copy  		POST       *
 *	/resources/image/commit  	POST	   *
 *	/resources/image/save  		POST       *
