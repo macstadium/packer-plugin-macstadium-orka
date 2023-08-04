@@ -3,7 +3,7 @@ package orka
 import (
 	_ "embed"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"testing"
@@ -95,7 +95,7 @@ func TestSuccessfulOrkaBuilder(t *testing.T) {
 
 			defer logs.Close()
 
-			logsBytes, err := ioutil.ReadAll(logs)
+			logsBytes, err := io.ReadAll(logs)
 			assert.Nil(t, err)
 			logsString := string(logsBytes)
 
@@ -129,7 +129,7 @@ func TestFailedOrkaBuilder(t *testing.T) {
 
 				defer logs.Close()
 
-				logsBytes, err := ioutil.ReadAll(logs)
+				logsBytes, err := io.ReadAll(logs)
 				assert.Nil(t, err)
 				logsString := string(logsBytes)
 
