@@ -300,7 +300,6 @@ func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) error {
 	}
 
 	ui.Say(fmt.Sprintf("Image deleted [%s]", imageDeleteResponse.Status))
-	imageDeleteResponse.Body.Close()
 
 	return nil
 }
