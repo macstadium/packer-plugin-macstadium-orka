@@ -45,14 +45,14 @@ func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, erro
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		e := fmt.Errorf("%s", resp.Status)
-		return "", e
-	}
-
 	var respData TokenLoginResponse
 	respBodyBytes, _ := io.ReadAll(resp.Body)
 	json.Unmarshal(respBodyBytes, &respData)
+
+	if resp.StatusCode != http.StatusOK {
+		e := fmt.Errorf("%s - %s", resp.Status, respData.Errors[0].Message)
+		return "", e
+	}
 
 	return respData.Token, nil
 }
@@ -109,7 +109,8 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 			imageCopyResponse, err := client.Do(imageCopyRequest)
 
 			if err != nil {
-				ui.Error(fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err).Error())
+				e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
+				ui.Error(e.Error())
 				state.Put("error", err)
 				s.createVMFailed = true
 				s.precopyFailed = true
@@ -125,6 +126,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 			if imageCopyResponse.StatusCode != http.StatusOK {
 				e := fmt.Errorf("Error from API: %s", imageCopyResponse.Status)
 				ui.Error(e.Error())
+				ui.Error(imageCopyResponseData.Errors[0].Message)
 				state.Put("error", e)
 				s.createVMFailed = true
 				return multistep.ActionHalt
@@ -171,7 +173,8 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	vmCreateConfigResponse, err := client.Do(vmCreateConfigRequest)
 
 	if err != nil {
-		ui.Error(fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err).Error())
+		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
+		ui.Error(e.Error())
 		return multistep.ActionHalt
 	}
 
@@ -184,6 +187,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	if vmCreateConfigResponse.StatusCode != http.StatusCreated {
 		e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, vmCreateConfigResponse.Status)
 		ui.Error(e.Error())
+		ui.Error(vmCreateConfigResponseData.Errors[0].Message)
 		state.Put("error", e)
 		s.createVMFailed = true
 		return multistep.ActionHalt
@@ -224,6 +228,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	if vmDeployResponse.StatusCode != http.StatusOK {
 		e := fmt.Errorf("Error from API while deploying Orka VM: %s", vmDeployResponse.Status)
 		state.Put("error", e)
+		ui.Error(vmDeployResponseData.Errors[0].Message)
 		s.createVMFailed = true
 		return multistep.ActionHalt
 	}
@@ -392,15 +397,16 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 	defer healthCheckResponse.Body.Close()
 
-	if healthCheckResponse.StatusCode != http.StatusOK {
-		e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, healthCheckResponse.Status)
-		ui.Error(e.Error())
-		state.Put("error", e)
-	}
-
 	var healthCheckResponseData HealthCheckResponse
 	healthCheckResponseBodyBytes, _ := io.ReadAll(healthCheckResponse.Body)
 	json.Unmarshal(healthCheckResponseBodyBytes, &healthCheckResponseData)
+
+	if healthCheckResponse.StatusCode != http.StatusOK {
+		e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, healthCheckResponse.Status)
+		ui.Error(e.Error())
+		ui.Error(healthCheckResponseData.Errors[0].Message)
+		state.Put("error", e)
+	}
 
 	serverVersion, _ := version.NewVersion(healthCheckResponseData.Version)
 
