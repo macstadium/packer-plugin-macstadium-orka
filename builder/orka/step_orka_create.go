@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -51,7 +51,7 @@ func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, erro
 	}
 
 	var respData TokenLoginResponse
-	respBodyBytes, _ := ioutil.ReadAll(resp.Body)
+	respBodyBytes, _ := io.ReadAll(resp.Body)
 	json.Unmarshal(respBodyBytes, &respData)
 
 	return respData.Token, nil
@@ -119,7 +119,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 			defer imageCopyResponse.Body.Close()
 
 			var imageCopyResponseData ImageCopyResponse
-			imageCopyResponseBytes, _ := ioutil.ReadAll(imageCopyResponse.Body)
+			imageCopyResponseBytes, _ := io.ReadAll(imageCopyResponse.Body)
 			json.Unmarshal(imageCopyResponseBytes, &imageCopyResponseData)
 
 			if imageCopyResponse.StatusCode != http.StatusOK {
@@ -178,7 +178,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	defer vmCreateConfigResponse.Body.Close()
 
 	var vmCreateConfigResponseData VMCreateResponse
-	vmCreateConfigResponseBytes, _ := ioutil.ReadAll(vmCreateConfigResponse.Body)
+	vmCreateConfigResponseBytes, _ := io.ReadAll(vmCreateConfigResponse.Body)
 	json.Unmarshal(vmCreateConfigResponseBytes, &vmCreateConfigResponseData)
 
 	if vmCreateConfigResponse.StatusCode != http.StatusCreated {
@@ -218,7 +218,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 
 	defer vmDeployResponse.Body.Close()
 	var vmDeployResponseData VMDeployResponse
-	vmDeployResponseBodyBytes, _ := ioutil.ReadAll(vmDeployResponse.Body)
+	vmDeployResponseBodyBytes, _ := io.ReadAll(vmDeployResponse.Body)
 	json.Unmarshal(vmDeployResponseBodyBytes, &vmDeployResponseData)
 
 	if vmDeployResponse.StatusCode != http.StatusOK {
@@ -399,7 +399,7 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	}
 
 	var healthCheckResponseData HealthCheckResponse
-	healthCheckResponseBodyBytes, _ := ioutil.ReadAll(healthCheckResponse.Body)
+	healthCheckResponseBodyBytes, _ := io.ReadAll(healthCheckResponse.Body)
 	json.Unmarshal(healthCheckResponseBodyBytes, &healthCheckResponseData)
 
 	serverVersion, _ := version.NewVersion(healthCheckResponseData.Version)
