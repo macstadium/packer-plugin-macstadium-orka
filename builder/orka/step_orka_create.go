@@ -403,6 +403,8 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	json.Unmarshal(healthCheckResponseBodyBytes, &healthCheckResponseData)
 
 	serverVersion, _ := version.NewVersion(healthCheckResponseData.Version)
+
+	// Orka Version where the token system moved from multi to single token architechture
 	singleTokenVersion, _ := version.NewVersion("2.1.1")
 
 	if serverVersion.LessThanOrEqual(singleTokenVersion) {
