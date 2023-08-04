@@ -30,7 +30,8 @@ type ImageDeleteRequest struct {
 }
 
 type ImageDeleteResponse struct {
-	Message string `json:"message"`
+	Message string               `json:"message"`
+	Errors  []OrkaResponseErrors `json:"errors"`
 }
 
 type VMCreateRequest struct {
@@ -53,9 +54,10 @@ type VMDeployRequest struct {
 }
 
 type VMDeployResponse struct {
-	VMId    string `json:"vm_id"`
-	IP      string `json:"ip"`
-	SSHPort string `json:"ssh_port"`
+	VMId    string               `json:"vm_id"`
+	IP      string               `json:"ip"`
+	SSHPort string               `json:"ssh_port"`
+	Errors  []OrkaResponseErrors `json:"errors"`
 }
 
 type VMPurgeRequest struct {
@@ -67,7 +69,8 @@ type ImageCommitRequest struct {
 }
 
 type ImageCommitResponse struct {
-	Message string `json:"message"`
+	Message string               `json:"message"`
+	Errors  []OrkaResponseErrors `json:"errors"`
 }
 
 type ImageSaveRequest struct {
@@ -76,7 +79,8 @@ type ImageSaveRequest struct {
 }
 
 type ImageSaveResponse struct {
-	Message string `json:"message"`
+	Message string               `json:"message"`
+	Errors  []OrkaResponseErrors `json:"errors"`
 }
 
 type VMStartRequest struct {
@@ -84,7 +88,8 @@ type VMStartRequest struct {
 }
 
 type VMStartResponse struct {
-	Message string `json:"message"`
+	Message string               `json:"message"`
+	Errors  []OrkaResponseErrors `json:"errors"`
 }
 
 type VMStopRequest struct {
@@ -92,11 +97,13 @@ type VMStopRequest struct {
 }
 
 type VMStopResponse struct {
-	Message string `json:"message"`
+	Message string               `json:"message"`
+	Errors  []OrkaResponseErrors `json:"errors"`
 }
 
 type HealthCheckResponse struct {
-	Version string `json:"api_version"`
+	Version string               `json:"api_version"`
+	Errors  []OrkaResponseErrors `json:"errors"`
 }
 
 const OrkaAPIRequestErrorMessage = "Error making request to Orka API"
