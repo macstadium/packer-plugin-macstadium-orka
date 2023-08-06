@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -64,10 +64,11 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 			return multistep.ActionHalt
 		}
 
+		defer imageCommitResponse.Body.Close()
+
 		var imageCommitResponseData ImageCommitResponse
-		imageCommitResponseBytes, _ := ioutil.ReadAll(imageCommitResponse.Body)
+		imageCommitResponseBytes, _ := io.ReadAll(imageCommitResponse.Body)
 		json.Unmarshal(imageCommitResponseBytes, &imageCommitResponseData)
-		imageCommitResponse.Body.Close()
 
 		if imageCommitResponse.StatusCode != http.StatusOK {
 			s.failedCommit = true
@@ -105,15 +106,17 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 			return multistep.ActionHalt
 		}
 
+		defer imageSaveResponse.Body.Close()
+
 		var imageSaveResponseData ImageSaveResponse
-		imageSaveResponseBytes, _ := ioutil.ReadAll(imageSaveResponse.Body)
+		imageSaveResponseBytes, _ := io.ReadAll(imageSaveResponse.Body)
 		json.Unmarshal(imageSaveResponseBytes, &imageSaveResponseData)
-		imageSaveResponse.Body.Close()
 
 		if imageSaveResponse.StatusCode != http.StatusOK {
 			s.failedSave = true
 			e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, imageSaveResponse.Status)
 			ui.Error(e.Error())
+			ui.Error(imageSaveResponseData.Errors[0].Message)
 			state.Put("error", e)
 			return multistep.ActionHalt
 		}
