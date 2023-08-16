@@ -135,6 +135,11 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		c.ImageName = name
 	}
 
+	if len(c.ImageName) >= 30 {
+		e := fmt.Sprintf("image_name has a maximum length of 29 charactors. The current image_name is %d charators long.", len(c.ImageName))
+		errs = packer.MultiErrorAppend(errs, errors.New(e))
+	}
+
 	// If we didn't specify the number of cores, set it to the default of 3.
 	if c.OrkaVMCPUCore == 0 {
 		c.OrkaVMCPUCore = 3
