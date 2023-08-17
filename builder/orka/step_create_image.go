@@ -42,6 +42,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		// If we are using the pre-copy logic, then we just re-commit the image back.
 
 
+		ui.Say("Committing existing image since pre-copy is being used")
 		ui.Say("Please wait as this can take a little while...")
 
 		imageCommitRequestData := ImageCommitRequest{vmid}
