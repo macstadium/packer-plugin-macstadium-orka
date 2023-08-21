@@ -23,7 +23,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	ui := state.Get("ui").(packer.Ui)
 	vmid := state.Get("vmid").(string)
 	token := state.Get("token").(string)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Hour)
 
 	defer cancel()
 
@@ -40,6 +40,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 	if config.ImagePrecopy {
 		// If we are using the pre-copy logic, then we just re-commit the image back.
+
 
 		ui.Say("Committing existing image since pre-copy is being used")
 		ui.Say("Please wait as this can take a little while...")

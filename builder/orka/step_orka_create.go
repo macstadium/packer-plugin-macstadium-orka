@@ -68,7 +68,8 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	token, err := s.createOrkaToken(state)
 
 	if err != nil {
-		ui.Error(fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err).Error())
+		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
+		ui.Error(e.Error())
 		state.Put("error", err)
 		s.loginFailed = true
 		return multistep.ActionHalt
