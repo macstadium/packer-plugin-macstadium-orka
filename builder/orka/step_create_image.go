@@ -25,6 +25,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	token := state.Get("token").(string)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Hour)
 
+
 	defer cancel()
 
 	if config.NoCreateImage {
