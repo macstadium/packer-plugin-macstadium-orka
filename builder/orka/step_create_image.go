@@ -23,7 +23,8 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	ui := state.Get("ui").(packer.Ui)
 	vmid := state.Get("vmid").(string)
 	token := state.Get("token").(string)
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Hour)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Hour)
+
 
 	defer cancel()
 
