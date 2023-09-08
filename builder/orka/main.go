@@ -42,6 +42,7 @@ type VMCreateRequest struct {
 	VCPUCount         int    `json:"vcpu_count"`
 	OrkaEnableIOBoost bool   `json:"io_boost"`
 	OrkaVMTag         string `json:"tag"`
+	OrkaVMTagRequired bool   `json:"tag_required"`
 }
 
 type VMCreateResponse struct {

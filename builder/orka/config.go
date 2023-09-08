@@ -32,6 +32,7 @@ type Config struct {
 	OrkaVMBuilderName   string `mapstructure:"orka_vm_builder_name"`
 	OrkaVMCPUCore       int    `mapstructure:"orka_vm_cpu_core"`
 	OrkaVMTag           string `mapstructure:"orka_vm_tag"`
+	OrkaVMTagRequired   bool   `mapstructure:"orka_vm_tag_required"`
 
 	// Name of the VM Config to launch from
 	SourceImage string `mapstructure:"source_image" required:"true"`
