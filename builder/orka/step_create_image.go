@@ -25,7 +25,6 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	token := state.Get("token").(string)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Hour)
 
-
 	defer cancel()
 
 	if config.NoCreateImage {
@@ -42,7 +41,6 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	if config.ImagePrecopy {
 		// If we are using the pre-copy logic, then we just re-commit the image back.
 
-
 		ui.Say("Committing existing image since pre-copy is being used")
 		ui.Say("Please wait as this can take a little while...")
 
@@ -57,7 +55,6 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		imageCommitRequest.Header.Set("Content-Type", "application/json")
 		imageCommitRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		imageCommitResponse, err := client.Do(imageCommitRequest)
-
 		if err != nil {
 			s.failedCommit = true
 			e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
@@ -99,7 +96,6 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		imageSaveRequest.Header.Set("Content-Type", "application/json")
 		imageSaveRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		imageSaveResponse, err := client.Do(imageSaveRequest)
-
 		if err != nil {
 			s.failedSave = true
 			e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)

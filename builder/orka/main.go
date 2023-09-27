@@ -107,5 +107,7 @@ type HealthCheckResponse struct {
 	Errors  []OrkaResponseErrors `json:"errors"`
 }
 
-const OrkaAPIRequestErrorMessage = "Error making request to Orka API"
-const OrkaAPIResponseErrorMessage = "Error from Orka API"
+const (
+	OrkaAPIRequestErrorMessage  = "Error making request to Orka API"
+	OrkaAPIResponseErrorMessage = "Error from Orka API"
+)

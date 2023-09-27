@@ -37,7 +37,6 @@ func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, erro
 	)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
-
 	if err != nil {
 		e := fmt.Errorf("Error while logging into the Orka API: %s", err)
 		return "", e
@@ -66,7 +65,6 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	// ############################
 	ui.Say("Logging into Orka API endpoint")
 	token, err := s.createOrkaToken(state)
-
 	if err != nil {
 		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 		ui.Error(e.Error())
@@ -108,7 +106,6 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 			imageCopyRequest.Header.Set("Content-Type", "application/json")
 			imageCopyRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 			imageCopyResponse, err := client.Do(imageCopyRequest)
-
 			if err != nil {
 				e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 				ui.Error(e.Error())
@@ -173,7 +170,6 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	vmCreateConfigRequest.Header.Set("Content-Type", "application/json")
 	vmCreateConfigRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	vmCreateConfigResponse, err := client.Do(vmCreateConfigRequest)
-
 	if err != nil {
 		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 		ui.Error(e.Error())
@@ -215,7 +211,6 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	vmDeployRequest.Header.Set("Content-Type", "application/json")
 	vmDeployRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	vmDeployResponse, err := client.Do(vmDeployRequest)
-
 	if err != nil {
 		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 		ui.Error(e.Error())
@@ -289,7 +284,6 @@ func (s *stepOrkaCreate) precopyImageDelete(state multistep.StateBag) error {
 	imageDeleteRequest.Header.Set("Content-Type", "application/json")
 	imageDeleteRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	imageDeleteResponse, err := client.Do(imageDeleteRequest)
-
 	if err != nil {
 		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 		ui.Error(e.Error())
@@ -364,7 +358,6 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	vmPurgeRequest.Header.Set("Content-Type", "application/json")
 	vmPurgeRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	vmPurgeResponse, err := client.Do(vmPurgeRequest)
-
 	if err != nil {
 		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 		ui.Error(e.Error())
@@ -390,7 +383,6 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 	)
 
 	healthCheckResponse, err := client.Do(healthCheckRequest)
-
 	if err != nil {
 		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 		ui.Error(e.Error())
@@ -428,7 +420,6 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 		revokeTokenRequest.Header.Set("Content-Type", "application/json")
 		revokeTokenRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		revokeTokenResponse, err := client.Do(revokeTokenRequest)
-
 		if err != nil {
 			e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
 			ui.Error(e.Error())

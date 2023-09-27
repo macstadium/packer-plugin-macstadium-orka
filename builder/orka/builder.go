@@ -60,7 +60,7 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 	}
 
 	// Iniitialize communicatior
-	var comm = &communicator.StepConnect{
+	comm := &communicator.StepConnect{
 		Config:    &b.config.CommConfig,
 		Host:      CommHost(b.config.CommConfig.Host()),
 		SSHPort:   CommPort(b.config.CommConfig.Port()),

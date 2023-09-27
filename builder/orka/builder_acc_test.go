@@ -18,7 +18,6 @@ func init() {
 	cmd := exec.Command("make", "-C", "../../", "rebuild")
 
 	err := cmd.Run()
-
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

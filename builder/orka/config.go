@@ -77,7 +77,6 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		Interpolate:       true,
 		InterpolateFilter: &interpolate.RenderFilter{},
 	}, raws...)
-
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +141,7 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 	}
 
 	if c.OrkaVMBuilderEnableIOBoost == nil {
-		var defaultIOBoostValue = true
+		defaultIOBoostValue := true
 		c.OrkaVMBuilderEnableIOBoost = &defaultIOBoostValue
 	}
 

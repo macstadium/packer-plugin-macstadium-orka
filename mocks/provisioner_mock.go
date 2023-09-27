@@ -1,4 +1,4 @@
-package mocks 
+package mocks
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 )
 
-type StepProvision struct {}
+type StepProvision struct{}
 
 func (s *StepProvision) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
