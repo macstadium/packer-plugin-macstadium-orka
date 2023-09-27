@@ -42,10 +42,10 @@ type Config struct {
 	// (see configuration templates for more info).
 	ImageName string `mapstructure:"image_name" required:"false"`
 
-	// Simulate create, for interanl dev/testing
+	// Simulate create, for internal dev/testing
 	SimulateCreate bool `mapstructure:"simulate_create"`
 
-	// Skips the pre-copy method, precopy is that the image can be comitted after the provisioners
+	// Skips the pre-copy method, precopy is that the image can be committed after the provisioners
 	// have ran. This moves the copy logic up-front but also consumes more disk space
 	// while the build is running. This was done as a workaround in Orka since the save
 	// API method did not actually copy over the base image contents.
@@ -110,19 +110,18 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 
 	// If our builder VM prefix wasn't given, default to packer.
 	if c.OrkaVMBuilderName == "" {
+		var nameTemplate string
 		if c.OrkaVMBuilderPrefix == "" {
-			name, err := interpolate.Render(fmt.Sprintf("packer-{{timestamp}}"), nil)
-			if err != nil {
-				return nil, err
-			}
-			c.OrkaVMBuilderName = name
+			nameTemplate = "packer-{{timestamp}}"
 		} else {
-			name, err := interpolate.Render(fmt.Sprintf("%s-{{timestamp}}", c.OrkaVMBuilderPrefix), nil)
-			if err != nil {
-				return nil, err
-			}
-			c.OrkaVMBuilderName = name
+			nameTemplate = fmt.Sprintf("%s-{{timestamp}}", c.OrkaVMBuilderPrefix)
 		}
+
+		name, err := interpolate.Render(nameTemplate, nil)
+		if err != nil {
+			return nil, err
+		}
+		c.OrkaVMBuilderName = name
 	}
 
 	// If our image name isn't set, we'll use a default name.

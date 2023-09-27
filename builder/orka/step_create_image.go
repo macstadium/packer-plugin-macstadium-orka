@@ -23,7 +23,9 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	ui := state.Get("ui").(packer.Ui)
 	vmid := state.Get("vmid").(string)
 	token := state.Get("token").(string)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Hour)
+	client := state.Get("client").(HttpClient)
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Hour)
 
 	defer cancel()
 
@@ -34,9 +36,6 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 
 	ui.Say(fmt.Sprintf("Image creation is using VM ID [%s]", vmid))
 	ui.Say(fmt.Sprintf("Image name is [%s]", config.ImageName))
-
-	// HTTP Client.
-	client := state.Get("client").(HttpClient)
 
 	if config.ImagePrecopy {
 		// If we are using the pre-copy logic, then we just re-commit the image back.

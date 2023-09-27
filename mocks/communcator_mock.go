@@ -3,7 +3,6 @@ package mocks
 import (
 	"context"
 	"fmt"
-
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 )
@@ -16,7 +15,7 @@ func (s *StepConnect) Run(ctx context.Context, state multistep.StateBag) multist
 	ui := state.Get("ui").(packer.Ui)
 	ui.Say(fmt.Sprintf("Using SSH communicator to connect: %s", s.Host))
 	ui.Say("Waiting for SSH to become available...")
-	ui.Say("Connected to to SSH!")
+	ui.Say("Connected to SSH!")
 	return multistep.ActionContinue
 }
 

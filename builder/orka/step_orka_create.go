@@ -20,6 +20,11 @@ type stepOrkaCreate struct {
 	precopyFailed  bool
 }
 
+const (
+	StateSshHost = "ssh_host"
+	StateSshPort = "ssh_port"
+)
+
 func (s *stepOrkaCreate) createOrkaToken(state multistep.StateBag) (string, error) {
 	config := state.Get("config").(*Config)
 	user := config.OrkaUser
@@ -260,8 +265,8 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 
 	// Write to our state databag for pick-up by the ssh communicator.
 	sshPort, _ := strconv.Atoi(vmDeployResponseData.SSHPort)
-	state.Put("ssh_port", sshPort)
-	state.Put("ssh_host", sshHost)
+	state.Put(StateSshHost, sshHost)
+	state.Put(StateSshPort, sshPort)
 
 	// Continue processing
 	return multistep.ActionContinue
