@@ -27,16 +27,14 @@ func init() {
 //go:embed test-fixtures/template.pkr.hcl
 var testBuilderHCL2Basic string
 
-var ErrorTypes = map[string]string{
-	"Login":       "false",
-	"Logout":      "false",
-	"VMCreate":    "false",
-	"VMDeploy":    "false",
-	"VMPurge":     "false",
-	"ImageSave":   "false",
-	"ImageCopy":   "true",
-	"ImageCommit": "true",
-	"HealthCheck": "false",
+var ErrorTypes = []string{
+	"Login",
+	"Logout",
+	"VMCreate",
+	"VMDeploy",
+	"VMPurge",
+	"ImageSave",
+	"HealthCheck",
 }
 
 func TestBuilder_ImplementsBuilder(t *testing.T) {
@@ -46,7 +44,7 @@ func TestBuilder_ImplementsBuilder(t *testing.T) {
 	}
 }
 
-func ErrorMockHCL(Bool string, ErrorType string) string {
+func ErrorMockHCL(errorType string) string {
 	return fmt.Sprintf(
 		`source "macstadium-orka" "image" {
 		source_image    = "90GCatalinaSSH.img"
@@ -54,7 +52,6 @@ func ErrorMockHCL(Bool string, ErrorType string) string {
 		orka_endpoint   = "http://10.221.188.100"
 		orka_user       = "user@ms.com"
 		orka_password   = "password"
-		image_precopy   = %s
 		simulate_create = false
 		no_create_image = false
 		no_delete_vm    = false
@@ -70,7 +67,8 @@ func ErrorMockHCL(Bool string, ErrorType string) string {
 				"touch .we-ran-packer-successfully"
 			]
 		}
-	}`, Bool, ErrorType)
+	}
+`, errorType)
 }
 
 func TestSuccessfulOrkaBuilder(t *testing.T) {
@@ -107,7 +105,7 @@ func TestSuccessfulOrkaBuilder(t *testing.T) {
 }
 
 func TestFailedOrkaBuilder(t *testing.T) {
-	for ErrorType, Bool := range ErrorTypes {
+	for _, ErrorType := range ErrorTypes {
 		testFailCase := &acctest.PluginTestCase{
 			Name: "orka_builder_error_test",
 			Setup: func() error {

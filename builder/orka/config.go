@@ -45,12 +45,7 @@ type Config struct {
 	// Simulate create, for internal dev/testing
 	SimulateCreate bool `mapstructure:"simulate_create"`
 
-	// Skips the pre-copy method, precopy is that the image can be committed after the provisioners
-	// have ran. This moves the copy logic up-front but also consumes more disk space
-	// while the build is running. This was done as a workaround in Orka since the save
-	// API method did not actually copy over the base image contents.
-	ImagePrecopy bool        `mapstructure:"image_precopy" required:"false"`
-	Mock         MockOptions `mapstructure:"mock" required:"false"`
+	Mock MockOptions `mapstructure:"mock" required:"false"`
 
 	// Do not image after completion, for some manual testing, for internal dev/testing.
 	NoCreateImage bool `mapstructure:"no_create_image"`

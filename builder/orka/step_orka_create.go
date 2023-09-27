@@ -92,61 +92,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 	// however, it will get replaced with the pre-copied destination image instead
 	// (below)
 
-	actualImage := config.SourceImage
-
-	if config.ImagePrecopy {
-		if config.NoCreateImage {
-			ui.Say("Skipping source image pre-copy because of 'no_create_image' being set")
-		} else {
-			ui.Say(fmt.Sprintf("Pre-copying source image [%s] to destination image [%s]", config.SourceImage, config.ImageName))
-			ui.Say("This can take awhile depending on how big the source image is - please wait...")
-
-			imageCopyRequestData := ImageCopyRequest{config.SourceImage, config.ImageName}
-			imageCopyRequestDataJSON, _ := json.Marshal(imageCopyRequestData)
-			imageCopyRequest, _ := http.NewRequest(
-				http.MethodPost,
-				fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/copy"),
-				bytes.NewBuffer(imageCopyRequestDataJSON),
-			)
-			imageCopyRequest.Header.Set("Content-Type", "application/json")
-			imageCopyRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-			imageCopyResponse, err := client.Do(imageCopyRequest)
-			if err != nil {
-				e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
-				ui.Error(e.Error())
-				state.Put("error", err)
-				s.createVMFailed = true
-				s.precopyFailed = true
-				return multistep.ActionHalt
-			}
-
-			defer imageCopyResponse.Body.Close()
-
-			var imageCopyResponseData ImageCopyResponse
-			imageCopyResponseBytes, _ := io.ReadAll(imageCopyResponse.Body)
-			json.Unmarshal(imageCopyResponseBytes, &imageCopyResponseData)
-
-			if imageCopyResponse.StatusCode != http.StatusOK {
-				e := fmt.Errorf("Error from API: %s", imageCopyResponse.Status)
-				ui.Error(e.Error())
-				ui.Error(imageCopyResponseData.Errors[0].Message)
-				state.Put("error", e)
-				s.createVMFailed = true
-				return multistep.ActionHalt
-			}
-
-			ui.Say("Image copied")
-			ui.Say(fmt.Sprintf("Builder VM configuration will use pre-copied base image %s",
-				actualImage))
-
-			// Use the destination image (pre-copied) as the actual image to launch
-			// the builder VM with.
-
-			actualImage = config.ImageName
-		}
-	} else {
-		ui.Say(fmt.Sprintf("Builder VM configuration will use base image [%s]", actualImage))
-	}
+	ui.Say(fmt.Sprintf("Builder VM configuration will use base image [%s]", config.SourceImage))
 
 	// #######################################
 	// # CREATE THE BUILDER VM CONFIGURATION #
@@ -158,7 +104,7 @@ func (s *stepOrkaCreate) Run(ctx context.Context, state multistep.StateBag) mult
 		config.OrkaVMBuilderName))
 	vmCreateConfigRequestData := VMCreateRequest{
 		OrkaVMName:        config.OrkaVMBuilderName,
-		OrkaVMImage:       actualImage,
+		OrkaVMImage:       config.SourceImage,
 		OrkaImage:         config.OrkaVMBuilderName,
 		OrkaCPUCore:       config.OrkaVMCPUCore,
 		VCPUCount:         config.OrkaVMCPUCore,
@@ -323,28 +269,11 @@ func (s *stepOrkaCreate) Cleanup(state multistep.StateBag) {
 
 	if config.NoDeleteVM {
 		ui.Say("We are skipping the deletion of the builder VM and its configuration because of do_not_delete being set")
-
-		if config.ImagePrecopy {
-			ui.Say(fmt.Sprintf("Pre-copy was performed: image %s will be left and not removed",
-				config.ImageName))
-		}
-
 		return
 	}
 
 	if s.createVMFailed {
-		if config.ImagePrecopy {
-			ui.Say(fmt.Sprintf("Cleaning up pre-copied image %s", config.ImageName))
-			precopyDeleteFailed := s.precopyImageDelete(state)
-
-			if precopyDeleteFailed != nil {
-				ui.Say("Cleaning up pre-copied image failed, check orka cluster for artifacts")
-				return
-			}
-		}
-
 		ui.Say("Nothing to cleanup because the builder VM creation, deployment and/or provisioning failed.")
-
 		return
 	}
 
