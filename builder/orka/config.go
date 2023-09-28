@@ -5,6 +5,7 @@ package orka
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/packer-plugin-sdk/common"
@@ -25,22 +26,23 @@ type Config struct {
 	CommConfig communicator.Config `mapstructure:",squash"`
 
 	// Information on how to connect to the Orka API to issue a token & create VM.
-	OrkaEndpoint        string `mapstructure:"orka_endpoint" required:"true"`
-	OrkaUser            string `mapstructure:"orka_user" required:"true"`
-	OrkaPassword        string `mapstructure:"orka_password" required:"true"`
-	OrkaVMBuilderPrefix string `mapstructure:"orka_vm_builder_prefix"`
-	OrkaVMBuilderName   string `mapstructure:"orka_vm_builder_name"`
-	OrkaVMCPUCore       int    `mapstructure:"orka_vm_cpu_core"`
-	OrkaVMTag           string `mapstructure:"orka_vm_tag"`
-	OrkaVMTagRequired   bool   `mapstructure:"orka_vm_tag_required"`
+	OrkaEndpoint           string `mapstructure:"orka_endpoint" required:"true"`
+	OrkaAuthToken          string `mapstructure:"orka_auth_token" required:"true"`
+	OrkaVMBuilderPrefix    string `mapstructure:"orka_vm_builder_prefix"`
+	OrkaVMBuilderNamespace string `mapstructure:"orka_vm_builder_namespace"`
+	OrkaVMBuilderName      string `mapstructure:"orka_vm_builder_name"`
+	OrkaVMCPUCore          int    `mapstructure:"orka_vm_cpu_core"`
+	OrkaVMTag              string `mapstructure:"orka_vm_tag"`
+	OrkaVMTagRequired      bool   `mapstructure:"orka_vm_tag_required"`
 
 	// Name of the VM Config to launch from
 	SourceImage string `mapstructure:"source_image" required:"true"`
 
-	// The name of the resulting image. Defaults to
-	// `packer-{{timestamp}}`
+	// The name of the resulting image. Defaults to `packer-{{timestamp}}`
 	// (see configuration templates for more info).
-	ImageName string `mapstructure:"image_name" required:"false"`
+	ImageName           string `mapstructure:"image_name" required:"false"`
+	ImageDescription    string `mapstructure:"image_description" required:"false"`
+	ImageForceOverwrite bool   `mapstructure:"image_force_overwrite" required:"false"`
 
 	Mock MockOptions `mapstructure:"mock" required:"false"`
 
@@ -80,19 +82,25 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 
 	// If we didn't specify a username, pull it from our defaults.
 	if c.CommConfig.SSHUsername == "" {
-		// log.Printf("No ssh username specified, using default: %s", defaultUserName)
 		c.CommConfig.SSHUsername = defaultUserName
 	}
 
 	// If we didn't specify a password, pull it from our defaults.
 	if c.CommConfig.SSHPassword == "" {
-		// log.Printf("No ssh password specified, using default: %s", defaultPassword)
 		c.CommConfig.SSHPassword = defaultPassword
 	}
 
 	// SSH should come up within' 10 seconds, but we'll give the timeout 5 minutes just incase.
 	if c.CommConfig.SSHTimeout == 0 {
 		c.CommConfig.SSHTimeout = 5 * time.Minute
+	}
+
+	if !strings.HasPrefix(c.OrkaEndpoint, "http://") && !strings.HasPrefix(c.OrkaEndpoint, "https://") {
+		errs = packer.MultiErrorAppend(errs, errors.New("API endpoint not set or does not start with `http(s)://`"))
+	}
+
+	if c.OrkaAuthToken == "" {
+		errs = packer.MultiErrorAppend(errs, errors.New("A valid authentication token must be specified"))
 	}
 
 	// If our source image isn't set, this is a failure.
@@ -114,6 +122,10 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 			return nil, err
 		}
 		c.OrkaVMBuilderName = name
+	}
+
+	if c.OrkaVMBuilderNamespace == "" {
+		c.OrkaVMBuilderNamespace = DefaultOrkaNamespace
 	}
 
 	// If our image name isn't set, we'll use a default name.

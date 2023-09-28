@@ -68,15 +68,17 @@ type FlatConfig struct {
 	WinRMInsecure              *bool             `mapstructure:"winrm_insecure" cty:"winrm_insecure" hcl:"winrm_insecure"`
 	WinRMUseNTLM               *bool             `mapstructure:"winrm_use_ntlm" cty:"winrm_use_ntlm" hcl:"winrm_use_ntlm"`
 	OrkaEndpoint               *string           `mapstructure:"orka_endpoint" required:"true" cty:"orka_endpoint" hcl:"orka_endpoint"`
-	OrkaUser                   *string           `mapstructure:"orka_user" required:"true" cty:"orka_user" hcl:"orka_user"`
-	OrkaPassword               *string           `mapstructure:"orka_password" required:"true" cty:"orka_password" hcl:"orka_password"`
+	OrkaAuthToken              *string           `mapstructure:"orka_auth_token" required:"true" cty:"orka_auth_token" hcl:"orka_auth_token"`
 	OrkaVMBuilderPrefix        *string           `mapstructure:"orka_vm_builder_prefix" cty:"orka_vm_builder_prefix" hcl:"orka_vm_builder_prefix"`
+	OrkaVMBuilderNamespace     *string           `mapstructure:"orka_vm_builder_namespace" cty:"orka_vm_builder_namespace" hcl:"orka_vm_builder_namespace"`
 	OrkaVMBuilderName          *string           `mapstructure:"orka_vm_builder_name" cty:"orka_vm_builder_name" hcl:"orka_vm_builder_name"`
 	OrkaVMCPUCore              *int              `mapstructure:"orka_vm_cpu_core" cty:"orka_vm_cpu_core" hcl:"orka_vm_cpu_core"`
 	OrkaVMTag                  *string           `mapstructure:"orka_vm_tag" cty:"orka_vm_tag" hcl:"orka_vm_tag"`
 	OrkaVMTagRequired          *bool             `mapstructure:"orka_vm_tag_required" cty:"orka_vm_tag_required" hcl:"orka_vm_tag_required"`
 	SourceImage                *string           `mapstructure:"source_image" required:"true" cty:"source_image" hcl:"source_image"`
 	ImageName                  *string           `mapstructure:"image_name" required:"false" cty:"image_name" hcl:"image_name"`
+	ImageDescription           *string           `mapstructure:"image_description" required:"false" cty:"image_description" hcl:"image_description"`
+	ImageForceOverwrite        *bool             `mapstructure:"image_force_overwrite" required:"false" cty:"image_force_overwrite" hcl:"image_force_overwrite"`
 	Mock                       *FlatMockOptions  `mapstructure:"mock" required:"false" cty:"mock" hcl:"mock"`
 	NoCreateImage              *bool             `mapstructure:"no_create_image" cty:"no_create_image" hcl:"no_create_image"`
 	NoDeleteVM                 *bool             `mapstructure:"no_delete_vm" cty:"no_delete_vm" hcl:"no_delete_vm"`
@@ -155,15 +157,17 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"winrm_insecure":               &hcldec.AttrSpec{Name: "winrm_insecure", Type: cty.Bool, Required: false},
 		"winrm_use_ntlm":               &hcldec.AttrSpec{Name: "winrm_use_ntlm", Type: cty.Bool, Required: false},
 		"orka_endpoint":                &hcldec.AttrSpec{Name: "orka_endpoint", Type: cty.String, Required: false},
-		"orka_user":                    &hcldec.AttrSpec{Name: "orka_user", Type: cty.String, Required: false},
-		"orka_password":                &hcldec.AttrSpec{Name: "orka_password", Type: cty.String, Required: false},
+		"orka_auth_token":              &hcldec.AttrSpec{Name: "orka_auth_token", Type: cty.String, Required: false},
 		"orka_vm_builder_prefix":       &hcldec.AttrSpec{Name: "orka_vm_builder_prefix", Type: cty.String, Required: false},
+		"orka_vm_builder_namespace":    &hcldec.AttrSpec{Name: "orka_vm_builder_namespace", Type: cty.String, Required: false},
 		"orka_vm_builder_name":         &hcldec.AttrSpec{Name: "orka_vm_builder_name", Type: cty.String, Required: false},
 		"orka_vm_cpu_core":             &hcldec.AttrSpec{Name: "orka_vm_cpu_core", Type: cty.Number, Required: false},
 		"orka_vm_tag":                  &hcldec.AttrSpec{Name: "orka_vm_tag", Type: cty.String, Required: false},
 		"orka_vm_tag_required":         &hcldec.AttrSpec{Name: "orka_vm_tag_required", Type: cty.Bool, Required: false},
 		"source_image":                 &hcldec.AttrSpec{Name: "source_image", Type: cty.String, Required: false},
 		"image_name":                   &hcldec.AttrSpec{Name: "image_name", Type: cty.String, Required: false},
+		"image_description":            &hcldec.AttrSpec{Name: "image_description", Type: cty.String, Required: false},
+		"image_force_overwrite":        &hcldec.AttrSpec{Name: "image_force_overwrite", Type: cty.Bool, Required: false},
 		"mock":                         &hcldec.BlockSpec{TypeName: "mock", Nested: hcldec.ObjectSpec((*FlatMockOptions)(nil).HCL2Spec())},
 		"no_create_image":              &hcldec.AttrSpec{Name: "no_create_image", Type: cty.Bool, Required: false},
 		"no_delete_vm":                 &hcldec.AttrSpec{Name: "no_delete_vm", Type: cty.Bool, Required: false},

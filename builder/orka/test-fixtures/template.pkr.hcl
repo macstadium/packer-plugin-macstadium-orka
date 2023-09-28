@@ -1,12 +1,13 @@
 source "macstadium-orka" "image" {
-	source_image    = "90GCatalinaSSH.img"
-	image_name      = "packer-{{timestamp}}"
-	orka_endpoint   = "http://10.221.188.100"
-	orka_user       = "victor@ms.com"
-	orka_password   = "password"
-	no_create_image = false
-	no_delete_vm    = false
-	mock { error_type = "none" }
+  orka_endpoint   = "http://10.221.188.100"
+  orka_auth_token = "myauthtoken"
+  source_image    = "90gbsonomassh.orkasi"
+  image_name      = "my-packer-image"
+  orka_vm_builder_namespace = "my-namespace"
+  orka_vm_builder_name = "my-vm-name"
+  no_create_image = false
+  no_delete_vm    = false
+  mock { error_type = "none" }
 }
 
 build {

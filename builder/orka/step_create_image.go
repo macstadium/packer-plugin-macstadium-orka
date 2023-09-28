@@ -1,32 +1,28 @@
 package orka
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
+	orkav1 "github.com/macstadium/packer-plugin-macstadium-orka/orkaapi/api/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type stepCreateImage struct {
-	failedCommit bool
-	failedSave   bool
-}
+type stepCreateImage struct{}
 
 func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
-	config := state.Get("config").(*Config)
-	ui := state.Get("ui").(packer.Ui)
-	vmid := state.Get("vmid").(string)
-	token := state.Get("token").(string)
-	client := state.Get("client").(HttpClient)
+	config := state.Get(StateConfig).(*Config)
+	ui := state.Get(StateUi).(packer.Ui)
+	orkaClient := state.Get(StateOrkaClient).(OrkaClient)
+
+	vmNamespace := config.OrkaVMBuilderNamespace
+	vmName := config.OrkaVMBuilderName
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Hour)
-
 	defer cancel()
 
 	if config.NoCreateImage {
@@ -34,68 +30,66 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		return multistep.ActionContinue
 	}
 
-	ui.Say(fmt.Sprintf("Image creation is using VM ID [%s]", vmid))
-	ui.Say(fmt.Sprintf("Image name is [%s]", config.ImageName))
-
+	ui.Say(fmt.Sprintf("Image creation is using VM [%s] in namespace [%s]", vmName, vmNamespace))
 	ui.Say(fmt.Sprintf("Saving new image [%s]", config.ImageName))
 	ui.Say("Please wait as this can take a little while...")
 
-	imageSaveRequestData := ImageSaveRequest{vmid, config.ImageName}
-	imageSaveRequestDataJSON, _ := json.Marshal(imageSaveRequestData)
-	imageSaveRequest, _ := http.NewRequestWithContext(
-		ctx,
-		http.MethodPost,
-		fmt.Sprintf("%s/%s", config.OrkaEndpoint, "resources/image/save"),
-		bytes.NewBuffer(imageSaveRequestDataJSON),
-	)
-	imageSaveRequest.Header.Set("Content-Type", "application/json")
-	imageSaveRequest.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	imageSaveResponse, err := client.Do(imageSaveRequest)
-	if err != nil {
-		s.failedSave = true
-		e := fmt.Errorf("%s [%s]", OrkaAPIRequestErrorMessage, err)
-		ui.Error(e.Error())
-		state.Put("error", e)
+	image := &orkav1.Image{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: DefaultOrkaNamespace,
+			Name:      config.ImageName,
+			Annotations: map[string]string{
+				DescriptionAnnotationKey: config.ImageDescription,
+			},
+		},
+		Spec: orkav1.ImageSpec{
+			Source:          vmName,
+			SourceNamespace: vmNamespace,
+			SourceType:      orkav1.Vm,
+			Destination:     config.ImageName,
+		},
+	}
+
+	if config.ImageForceOverwrite {
+		if err := client.IgnoreNotFound(orkaClient.Delete(ctx, image)); err != nil {
+			err := fmt.Errorf("failed to delete existing VM image: %w", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
+	}
+
+	if err := orkaClient.Create(ctx, image); err != nil {
+		err := fmt.Errorf("failed to create a VM save request: %w", err)
+		state.Put("error", err)
+		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
 
-	defer imageSaveResponse.Body.Close()
-
-	var imageSaveResponseData ImageSaveResponse
-	imageSaveResponseBytes, _ := io.ReadAll(imageSaveResponse.Body)
-	json.Unmarshal(imageSaveResponseBytes, &imageSaveResponseData)
-
-	if imageSaveResponse.StatusCode != http.StatusOK {
-		s.failedSave = true
-		e := fmt.Errorf("%s [%s]", OrkaAPIResponseErrorMessage, imageSaveResponse.Status)
-		ui.Error(e.Error())
-		ui.Error(imageSaveResponseData.Errors[0].Message)
-		state.Put("error", e)
+	if err := orkaClient.WaitForImage(ctx, config.ImageName); err != nil {
+		err := fmt.Errorf("failed to save the image: %w", err)
+		state.Put("error", err)
+		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
 
-	ui.Say(fmt.Sprintf("Image saved [%s] [%s]", imageSaveResponse.Status, imageSaveResponseData.Message))
+	ui.Say(fmt.Sprintf("image [%s] saved successfully", config.ImageName))
 
 	return multistep.ActionContinue
 }
 
 func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
-	ui := state.Get("ui").(packer.Ui)
-	vmid := state.Get("vmid").(string)
-	_, cancelled := state.GetOk(multistep.StateCancelled)
-	_, halted := state.GetOk(multistep.StateHalted)
+	ui := state.Get(StateUi).(packer.Ui)
+	config := state.Get(StateConfig).(*Config)
+	orkaClient := state.Get(StateOrkaClient).(OrkaClient)
 
-	if s.failedCommit || s.failedSave {
-		// TODO: Automatically clean up? Make a user-flag?
-		ui.Say("Commit or save failed - please check Orka to see if any artifacts were left behind")
-		return
-	}
+	image := &orkav1.Image{}
 
-	if !cancelled && !halted {
-		return
-	}
-
-	if vmid == "" {
-		return
+	err := orkaClient.Get(context.Background(), client.ObjectKey{Namespace: DefaultOrkaNamespace, Name: config.ImageName}, image)
+	if err == nil && image.Status.State == orkav1.Failed {
+		ui.Say(fmt.Sprintf("Cleaning up image [%s]", config.ImageName))
+		if err := orkaClient.Delete(context.Background(), image); err != nil {
+			ui.Error(fmt.Sprintf("failed to delete image [%s]: %s", config.ImageName, err.Error()))
+		}
 	}
 }

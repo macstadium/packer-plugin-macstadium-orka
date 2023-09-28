@@ -1,0 +1,145 @@
+package orka
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/url"
+	"time"
+
+	orkav1 "github.com/macstadium/packer-plugin-macstadium-orka/orkaapi/api/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+)
+
+type OrkaClient interface {
+	Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error
+	Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error
+	Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
+	WaitForVm(ctx context.Context, namespace, name string) (string, int, error)
+	WaitForImage(ctx context.Context, name string) error
+}
+
+type RealOrkaClient struct {
+	client.WithWatch
+}
+
+// GetOrkaClient returns a runtime client with the on-disk discovery cache enabled
+func GetOrkaClient(orkaEndpoint, authToken string) (*RealOrkaClient, error) {
+	sch := runtime.NewScheme()
+	if err := orkav1.AddToScheme(sch); err != nil {
+		log.Fatal("failed to add orkav1 to scheme")
+	}
+
+	endpoint, err := url.JoinPath(orkaEndpoint, "api", "v1", "cluster-info")
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.Get(endpoint)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterInfo := struct {
+		ApiEndpoint string `json:"apiEndpoint"`
+		CertData    string `json:"certData"`
+	}{}
+	if err := json.Unmarshal(bodyBytes, &clusterInfo); err != nil {
+		return nil, err
+	}
+
+	restConfig := config.GetConfigOrDie()
+	restConfig = &rest.Config{
+		Host:        clusterInfo.ApiEndpoint,
+		BearerToken: authToken,
+		TLSClientConfig: rest.TLSClientConfig{
+			CAData: []byte(clusterInfo.CertData),
+		},
+	}
+
+	c, err := client.NewWithWatch(restConfig, client.Options{Scheme: sch})
+	if err != nil {
+		return nil, err
+	}
+
+	return &RealOrkaClient{c}, nil
+}
+
+func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string) (string, int, error) {
+	vmiList := &orkav1.VirtualMachineInstanceList{}
+	watcher, err := c.Watch(ctx, vmiList, client.InNamespace(namespace), client.MatchingFields{"metadata.name": name})
+	if err != nil {
+		return "", 0, err
+	}
+
+	defer watcher.Stop()
+
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return "", 0, ctx.Err()
+
+		case event, ok := <-watcher.ResultChan():
+			if !ok {
+				return "", 0, fmt.Errorf("watcher closed unexpectedly. You can check the status of the VM with 'orka3 vm list %s -n %s'", name, namespace)
+			}
+			vmi := event.Object.(*orkav1.VirtualMachineInstance)
+
+			if vmi.Status.Phase == orkav1.VMRunning {
+				return vmi.Status.HostIP, *vmi.Status.SSHPort, nil
+			}
+
+			if vmi.Status.Phase == orkav1.VMFailed {
+				err := c.Delete(ctx, vmi)
+				return "", 0, errors.Join(fmt.Errorf("%s", vmi.Status.ErrorMessage), err)
+			}
+		}
+	}
+}
+
+func (c *RealOrkaClient) WaitForImage(ctx context.Context, name string) error {
+	imageList := &orkav1.ImageList{}
+	watcher, err := c.Watch(ctx, imageList, client.InNamespace(DefaultOrkaNamespace), client.MatchingFields{"metadata.name": name})
+	if err != nil {
+		return err
+	}
+	defer watcher.Stop()
+
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Hour)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		case event, ok := <-watcher.ResultChan():
+			if !ok {
+				return fmt.Errorf("watcher closed unexpectedly. You can check the status of the image with 'orka3 image list %s'", name)
+			}
+			image := event.Object.(*orkav1.Image)
+
+			switch image.Status.State {
+			case orkav1.Ready:
+				return nil
+			case orkav1.Failed:
+				return errors.New(image.Status.ErrorMessage)
+			}
+		}
+	}
+}
