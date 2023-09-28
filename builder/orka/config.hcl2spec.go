@@ -77,7 +77,6 @@ type FlatConfig struct {
 	OrkaVMTagRequired          *bool             `mapstructure:"orka_vm_tag_required" cty:"orka_vm_tag_required" hcl:"orka_vm_tag_required"`
 	SourceImage                *string           `mapstructure:"source_image" required:"true" cty:"source_image" hcl:"source_image"`
 	ImageName                  *string           `mapstructure:"image_name" required:"false" cty:"image_name" hcl:"image_name"`
-	SimulateCreate             *bool             `mapstructure:"simulate_create" cty:"simulate_create" hcl:"simulate_create"`
 	Mock                       *FlatMockOptions  `mapstructure:"mock" required:"false" cty:"mock" hcl:"mock"`
 	NoCreateImage              *bool             `mapstructure:"no_create_image" cty:"no_create_image" hcl:"no_create_image"`
 	NoDeleteVM                 *bool             `mapstructure:"no_delete_vm" cty:"no_delete_vm" hcl:"no_delete_vm"`
@@ -165,7 +164,6 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"orka_vm_tag_required":         &hcldec.AttrSpec{Name: "orka_vm_tag_required", Type: cty.Bool, Required: false},
 		"source_image":                 &hcldec.AttrSpec{Name: "source_image", Type: cty.String, Required: false},
 		"image_name":                   &hcldec.AttrSpec{Name: "image_name", Type: cty.String, Required: false},
-		"simulate_create":              &hcldec.AttrSpec{Name: "simulate_create", Type: cty.Bool, Required: false},
 		"mock":                         &hcldec.BlockSpec{TypeName: "mock", Nested: hcldec.ObjectSpec((*FlatMockOptions)(nil).HCL2Spec())},
 		"no_create_image":              &hcldec.AttrSpec{Name: "no_create_image", Type: cty.Bool, Required: false},
 		"no_delete_vm":                 &hcldec.AttrSpec{Name: "no_delete_vm", Type: cty.Bool, Required: false},

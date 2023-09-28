@@ -42,9 +42,6 @@ type Config struct {
 	// (see configuration templates for more info).
 	ImageName string `mapstructure:"image_name" required:"false"`
 
-	// Simulate create, for internal dev/testing
-	SimulateCreate bool `mapstructure:"simulate_create"`
-
 	Mock MockOptions `mapstructure:"mock" required:"false"`
 
 	// Do not image after completion, for some manual testing, for internal dev/testing.

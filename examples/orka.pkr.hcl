@@ -20,7 +20,6 @@ source "macstadium-orka" "image" {
   orka_endpoint   = var.ORKA_ENDPOINT
   orka_user       = var.ORKA_USER
   orka_password   = var.ORKA_PASSWORD
-  simulate_create = false
   no_create_image = false
   no_delete_vm    = false
 }

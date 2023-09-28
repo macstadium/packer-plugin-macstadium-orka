@@ -4,7 +4,6 @@ source "macstadium-orka" "image" {
 	orka_endpoint   = "http://10.221.188.100"
 	orka_user       = "victor@ms.com"
 	orka_password   = "password"
-	simulate_create = false
 	no_create_image = false
 	no_delete_vm    = false
 	mock { error_type = "none" }

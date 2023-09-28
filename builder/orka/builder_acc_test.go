@@ -52,7 +52,6 @@ func ErrorMockHCL(errorType string) string {
 		orka_endpoint   = "http://10.221.188.100"
 		orka_user       = "user@ms.com"
 		orka_password   = "password"
-		simulate_create = false
 		no_create_image = false
 		no_delete_vm    = false
 		mock { error_type = "%s" }
