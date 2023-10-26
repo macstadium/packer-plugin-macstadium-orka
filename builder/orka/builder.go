@@ -48,7 +48,7 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 	state.Put(StateConfig, &b.config)
 	state.Put(StateUi, ui)
 
-	var commStep, provisionStep multistep.Step
+	var commStep, provisionStep, syncDiskStep multistep.Step
 	var client OrkaClient
 
 	if b.config.Mock == (MockOptions{}) {
@@ -64,10 +64,12 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 			SSHConfig: b.config.CommConfig.SSHConfigFunc(),
 		}
 		provisionStep = &commonsteps.StepProvision{}
+		syncDiskStep = &stepSyncDisk{}
 	} else {
 		client = &mocks.OrkaClient{ErrorType: b.config.Mock.ErrorType}
 		commStep = &mocks.StepConnect{Host: b.config.CommConfig.Host()}
 		provisionStep = &mocks.StepProvision{}
+		syncDiskStep = &mocks.StepProvision{}
 	}
 	state.Put(StateOrkaClient, client)
 
@@ -75,6 +77,7 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 		&stepCreateVm{},
 		commStep,
 		provisionStep,
+		syncDiskStep,
 		&stepCreateImage{},
 	}
 
