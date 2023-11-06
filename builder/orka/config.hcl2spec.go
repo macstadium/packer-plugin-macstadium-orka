@@ -74,6 +74,7 @@ type FlatConfig struct {
 	OrkaVMBuilderName          *string           `mapstructure:"orka_vm_builder_name" cty:"orka_vm_builder_name" hcl:"orka_vm_builder_name"`
 	OrkaVMCPUCore              *int              `mapstructure:"orka_vm_cpu_core" cty:"orka_vm_cpu_core" hcl:"orka_vm_cpu_core"`
 	OrkaVMTag                  *string           `mapstructure:"orka_vm_tag" cty:"orka_vm_tag" hcl:"orka_vm_tag"`
+	OrkaVMTagRequired          *bool             `mapstructure:"orka_vm_tag_required" cty:"orka_vm_tag_required" hcl:"orka_vm_tag_required"`
 	SourceImage                *string           `mapstructure:"source_image" required:"true" cty:"source_image" hcl:"source_image"`
 	ImageName                  *string           `mapstructure:"image_name" required:"false" cty:"image_name" hcl:"image_name"`
 	SimulateCreate             *bool             `mapstructure:"simulate_create" cty:"simulate_create" hcl:"simulate_create"`
@@ -162,6 +163,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"orka_vm_builder_name":         &hcldec.AttrSpec{Name: "orka_vm_builder_name", Type: cty.String, Required: false},
 		"orka_vm_cpu_core":             &hcldec.AttrSpec{Name: "orka_vm_cpu_core", Type: cty.Number, Required: false},
 		"orka_vm_tag":                  &hcldec.AttrSpec{Name: "orka_vm_tag", Type: cty.String, Required: false},
+		"orka_vm_tag_required":         &hcldec.AttrSpec{Name: "orka_vm_tag_required", Type: cty.Bool, Required: false},
 		"source_image":                 &hcldec.AttrSpec{Name: "source_image", Type: cty.String, Required: false},
 		"image_name":                   &hcldec.AttrSpec{Name: "image_name", Type: cty.String, Required: false},
 		"simulate_create":              &hcldec.AttrSpec{Name: "simulate_create", Type: cty.Bool, Required: false},
