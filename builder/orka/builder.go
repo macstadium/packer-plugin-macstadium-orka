@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/hashicorp/hcl/v2/hcldec"
-	"github.com/hashicorp/packer-plugin-sdk/multistep/commonsteps"
 	"github.com/hashicorp/packer-plugin-sdk/communicator"
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
+	"github.com/hashicorp/packer-plugin-sdk/multistep/commonsteps"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 	"github.com/macstadium/packer-plugin-macstadium-orka/mocks"
 )
@@ -16,7 +16,7 @@ import (
 const BuilderId = "orka"
 
 type HttpClient interface {
-    Do(req *http.Request) (*http.Response, error)
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // Builder ...
@@ -38,7 +38,6 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 
 	return nil, warnings, nil
 }
-
 
 func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (packer.Artifact, error) {
 	// Setup the state bag and initial state for the steps.
@@ -62,12 +61,11 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 
 	// Iniitialize communicatior
 	var comm = &communicator.StepConnect{
-			Config:    &b.config.CommConfig,
-			Host:      CommHost(b.config.CommConfig.Host()),
-			SSHPort:   CommPort(b.config.CommConfig.Port()),
-			SSHConfig: b.config.CommConfig.SSHConfigFunc(),
+		Config:    &b.config.CommConfig,
+		Host:      CommHost(b.config.CommConfig.Host()),
+		SSHPort:   CommPort(b.config.CommConfig.Port()),
+		SSHConfig: b.config.CommConfig.SSHConfigFunc(),
 	}
-
 
 	// Add our SSH Communicator after our steps.
 	if b.config.Mock == (MockOptions{}) {
@@ -75,6 +73,7 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 			steps,
 			comm,
 			new(commonsteps.StepProvision),
+			new(stepSyncDisk),
 			new(stepCreateImage),
 		)
 	} else {
