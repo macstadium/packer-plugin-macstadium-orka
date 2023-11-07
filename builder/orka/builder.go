@@ -3,26 +3,33 @@ package orka
 import (
 	"context"
 	"fmt"
-	"net/http"
-
 	"github.com/hashicorp/hcl/v2/hcldec"
 	"github.com/hashicorp/packer-plugin-sdk/communicator"
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/multistep/commonsteps"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
+
 	"github.com/macstadium/packer-plugin-macstadium-orka/mocks"
 )
 
 const BuilderId = "orka"
 
-type HttpClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
+const (
+	DescriptionAnnotationKey = "orka.macstadium.com/description"
+	DefaultOrkaNamespace     = "orka-default"
+)
+
+const (
+	StateConfig     = "config"
+	StateUi         = "ui"
+	StateSshHost    = "ssh_host"
+	StateSshPort    = "ssh_port"
+	StateOrkaClient = "orka_client"
+)
 
 // Builder ...
 type Builder struct {
 	config Config
-	runner multistep.Runner
 }
 
 // ConfigSpec ...
@@ -32,66 +39,51 @@ func (b *Builder) ConfigSpec() hcldec.ObjectSpec { return b.config.FlatMapstruct
 func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 	warnings, errs := b.config.Prepare(raws...)
 
-	if errs != nil {
-		return nil, warnings, errs
-	}
-
-	return nil, warnings, nil
+	return nil, warnings, errs
 }
-
 func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (packer.Artifact, error) {
 	// Setup the state bag and initial state for the steps.
-	state := new(multistep.BasicStateBag)
-	state.Put("config", &b.config)
-	state.Put("hook", hook)
-	state.Put("ui", ui)
+	state := multistep.BasicStateBag{}
+	state.Put("hook", hook) // needed for the common provisioning step
+	state.Put(StateConfig, &b.config)
+	state.Put(StateUi, ui)
 
-	// Check if mock block is empty
+	var commStep, provisionStep, syncDiskStep multistep.Step
+	var client OrkaClient
+
 	if b.config.Mock == (MockOptions{}) {
-		state.Put("client", &http.Client{})
-	} else {
-		ErrorType := b.config.Mock.ErrorType
-		state.Put("client", &mocks.Client{ErrorType: ErrorType})
-	}
-
-	// Create our step pipeline.
-	steps := []multistep.Step{
-		new(stepOrkaCreate),
-	}
-
-	// Iniitialize communicatior
-	var comm = &communicator.StepConnect{
-		Config:    &b.config.CommConfig,
-		Host:      CommHost(b.config.CommConfig.Host()),
-		SSHPort:   CommPort(b.config.CommConfig.Port()),
-		SSHConfig: b.config.CommConfig.SSHConfigFunc(),
-	}
-
-	// Add our SSH Communicator after our steps.
-	if b.config.Mock == (MockOptions{}) {
-		steps = append(
-			steps,
-			comm,
-			new(commonsteps.StepProvision),
-			new(stepSyncDisk),
-			new(stepCreateImage),
-		)
-	} else {
-		MockComm := &mocks.StepConnect{
-			Host: b.config.CommConfig.Host(),
+		if c, err := GetOrkaClient(b.config.OrkaEndpoint, b.config.OrkaAuthToken); err != nil {
+			return nil, fmt.Errorf("failed to create k8s client: %w", err)
+		} else {
+			client = c
 		}
-		steps = append(
-			steps,
-			MockComm,
-			new(mocks.StepProvision),
-			new(stepCreateImage),
-		)
+		commStep = &communicator.StepConnect{
+			Config:    &b.config.CommConfig,
+			Host:      func(state multistep.StateBag) (string, error) { return state.Get(StateSshHost).(string), nil },
+			SSHPort:   func(state multistep.StateBag) (int, error) { return state.Get(StateSshPort).(int), nil },
+			SSHConfig: b.config.CommConfig.SSHConfigFunc(),
+		}
+		provisionStep = &commonsteps.StepProvision{}
+		syncDiskStep = &stepSyncDisk{}
+	} else {
+		client = &mocks.OrkaClient{ErrorType: b.config.Mock.ErrorType}
+		commStep = &mocks.StepConnect{Host: b.config.CommConfig.Host()}
+		provisionStep = &mocks.StepProvision{}
+		syncDiskStep = &mocks.StepProvision{}
+	}
+	state.Put(StateOrkaClient, client)
 
+	steps := []multistep.Step{
+		&stepCreateVm{},
+		commStep,
+		provisionStep,
+		syncDiskStep,
+		&stepCreateImage{},
 	}
 
 	// Run!
-	b.runner = commonsteps.NewRunner(steps, b.config.PackerConfig, ui)
-	b.runner.Run(ctx, state)
+	runner := commonsteps.NewRunner(steps, b.config.PackerConfig, ui)
+	runner.Run(ctx, &state)
 
 	// If there was an error, return that.
 	if rawErr, ok := state.GetOk("error"); ok {
@@ -103,16 +95,6 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 		return nil, nil
 	}
 
-	// Check if we can describe the VM.
-	vmid := state.Get("vmid").(string)
-
-	if vmid == "" {
-		err := fmt.Errorf("Unable to retrieve VMID")
-		return nil, err
-	}
-
 	// No errors, must've worked.
-	return &Artifact{
-		imageId: b.config.ImageName,
-	}, nil
+	return &Artifact{imageId: b.config.ImageName}, nil
 }

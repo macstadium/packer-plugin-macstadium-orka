@@ -40,3 +40,6 @@ _testmain.go
 mapstructure-to-hcl2
 packer-sdc
 *.go.backup
+
+# IDEs
+/.idea/

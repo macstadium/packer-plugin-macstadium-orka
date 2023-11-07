@@ -15,9 +15,7 @@ func (*Artifact) BuilderId() string {
 }
 
 // Destroy destroys the image represented by the artifact.
-func (self *Artifact) Destroy() error {
-	// log.Printf("Destroying image: %s", self.String())
-	// err := self.client.destroyImage(self.imageId)
+func (a *Artifact) Destroy() error {
 	return errors.New("Destroy not implemented")
 }
 
@@ -27,15 +25,15 @@ func (*Artifact) Files() []string {
 }
 
 // Id returns the VM UUID.
-func (self *Artifact) Id() string {
-	return self.imageId
+func (a *Artifact) Id() string {
+	return a.imageId
 }
 
-func (self *Artifact) State(name string) interface{} {
+func (a *Artifact) State(name string) interface{} {
 	return nil
 }
 
 // String returns the string representation of the artifact.
-func (self *Artifact) String() string {
-	return self.imageId
+func (a *Artifact) String() string {
+	return a.imageId
 }
