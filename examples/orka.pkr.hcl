@@ -4,24 +4,19 @@ variable "ORKA_IMAGE" {
 variable "ORKA_ENDPOINT" {
   default = env("ORKA_ENDPOINT")
 }
-variable "ORKA_USER" {
-  default = env("ORKA_USER")
-}
-variable "ORKA_PASSWORD" {
-  default = env("ORKA_PASSWORD")
+variable "ORKA_TOKEN" {
+  default = env("ORKA_TOKEN")
 }
 variable "ORKA_IMAGE_NAME_PREFIX" {
   default = "packer"
 }
 
 source "macstadium-orka" "image" {
-  source_image    = var.ORKA_IMAGE
-  image_name      = "${var.ORKA_IMAGE_NAME_PREFIX}-{{timestamp}}"
-  orka_endpoint   = var.ORKA_ENDPOINT
-  orka_user       = var.ORKA_USER
-  orka_password   = var.ORKA_PASSWORD
-  no_create_image = false
-  no_delete_vm    = false
+  source_image      = var.ORKA_IMAGE
+  image_name        = "${var.ORKA_IMAGE_NAME_PREFIX}-{{timestamp}}"
+  image_description = "I was created with Packer !"
+  orka_endpoint     = var.ORKA_ENDPOINT
+  orka_auth_token   = var.ORKA_TOKEN
 }
 
 build {
