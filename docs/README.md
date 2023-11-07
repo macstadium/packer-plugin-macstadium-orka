@@ -1,8 +1,8 @@
-## Installation
+# Installation
 
-### Using pre-built releases
+## Using pre-built releases
 
-#### Using the `packer init` command
+### Using the `packer init` command
 
 Starting from version 1.7, Packer supports a new `packer init` command allowing
 automatic installation of Packer plugins. Read the
@@ -15,13 +15,12 @@ Then, run [`packer init`](https://www.packer.io/docs/commands/init).
 packer {
   required_plugins {
     macstadium-orka = {
-      version = ">= 2.3.0"
+      version = "= 3.0.0"
       source  = "github.com/macstadium/macstadium-orka"
     }
   }
 }
 ```
-
 
 ### Manual installation
 
@@ -30,7 +29,6 @@ Once you have downloaded the latest archive corresponding to your target OS,
 uncompress it to retrieve the plugin binary file corresponding to your platform.
 To install the plugin, please follow the Packer documentation on
 [installing a plugin](https://www.packer.io/docs/extending/plugins/#installing-plugins).
-
 
 ### From Sources
 
