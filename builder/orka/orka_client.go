@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type OrkaClient interface {
@@ -60,8 +59,7 @@ func GetOrkaClient(orkaEndpoint, authToken string) (*RealOrkaClient, error) {
 		return nil, err
 	}
 
-	restConfig := config.GetConfigOrDie()
-	restConfig = &rest.Config{
+	restConfig := &rest.Config{
 		Host:        clusterInfo.ApiEndpoint,
 		BearerToken: authToken,
 		TLSClientConfig: rest.TLSClientConfig{
