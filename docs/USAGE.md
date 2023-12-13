@@ -12,7 +12,7 @@ For the first section, we will add the required plugins block.
 packer {
   required_plugins {
     macstadium-orka = {
-      version = "= 3.0.0"
+      version = "= 3.0.1"
       source  = "github.com/macstadium/macstadium-orka"
     }
   }
