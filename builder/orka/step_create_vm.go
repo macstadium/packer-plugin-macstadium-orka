@@ -45,7 +45,7 @@ func (s *stepCreateVm) Run(ctx context.Context, state multistep.StateBag) multis
 		return multistep.ActionHalt
 	}
 
-	sshHost, sshPort, err := client.WaitForVm(ctx, config.OrkaVMBuilderNamespace, config.OrkaVMBuilderName)
+	sshHost, sshPort, err := client.WaitForVm(ctx, config.OrkaVMBuilderNamespace, config.OrkaVMBuilderName, config.PackerVMWaitTimeout)
 	if err != nil {
 		err := fmt.Errorf("failed to wait for the VM: %w", err)
 		state.Put("error", err)
