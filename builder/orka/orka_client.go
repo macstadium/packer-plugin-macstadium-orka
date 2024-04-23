@@ -21,7 +21,7 @@ type OrkaClient interface {
 	Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error
 	Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error
 	Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
-	WaitForVm(ctx context.Context, namespace, name string) (string, int, error)
+	WaitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error)
 	WaitForImage(ctx context.Context, name string) error
 }
 
@@ -75,7 +75,7 @@ func GetOrkaClient(orkaEndpoint, authToken string) (*RealOrkaClient, error) {
 	return &RealOrkaClient{c}, nil
 }
 
-func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string) (string, int, error) {
+func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error) {
 	vmiList := &orkav1.VirtualMachineInstanceList{}
 	watcher, err := c.Watch(ctx, vmiList, client.InNamespace(namespace), client.MatchingFields{"metadata.name": name})
 	if err != nil {
@@ -84,7 +84,7 @@ func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string) 
 
 	defer watcher.Stop()
 
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Minute)
 	defer cancel()
 
 	for {

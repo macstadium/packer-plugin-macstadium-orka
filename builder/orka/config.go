@@ -60,6 +60,9 @@ type Config struct {
 
 	// Required if Enable Orka IP Mapping is enabled. Map of Node Ips to the external IP values.
 	OrkaNodeIPMap map[string]string `mapstructure:"orka_node_ip_map"`
+
+	// Configuration for VM launch timeout
+	PackerVMWaitTimeout int `mapstructure:"packer_vm_timeout"`
 }
 
 type MockOptions struct {
@@ -146,6 +149,10 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 	if c.OrkaVMBuilderEnableIOBoost == nil {
 		defaultIOBoostValue := true
 		c.OrkaVMBuilderEnableIOBoost = &defaultIOBoostValue
+	}
+
+	if c.PackerVMWaitTimeout == 0 {
+		c.PackerVMWaitTimeout = 10
 	}
 
 	if es := c.CommConfig.Prepare(nil); len(es) > 0 {
