@@ -71,15 +71,7 @@ func GetOrkaClient(orkaEndpoint, authToken string) (*RealOrkaClient, error) {
 
 	// Determine if using a public IP address and update config with k8s apiserver name
 	if clusterInfo.APIDomain != "" {
-		u, err := url.Parse(orkaEndpoint)
-		if err != nil {
-			return nil, err
-		}
-		ips, err := net.LookupIP(u.Hostname())
-		if err != nil {
-			return nil, err
-		}
-		ip := ips[0]
+		ip := lookupIP(orkaEndpoint)
 		if ip != nil && !ip.IsPrivate() {
 			restConfig.Host = fmt.Sprintf("https://%s", ip)
 			restConfig.TLSClientConfig.ServerName = clusterInfo.APIDomain
@@ -92,6 +84,18 @@ func GetOrkaClient(orkaEndpoint, authToken string) (*RealOrkaClient, error) {
 	}
 
 	return &RealOrkaClient{c}, nil
+}
+
+func lookupIP(orkaEndpoint string) net.IP {
+	u, err := url.Parse(orkaEndpoint)
+	if err != nil {
+		return nil
+	}
+	ips, err := net.LookupIP(u.Hostname())
+	if err != nil {
+		return nil
+	}
+	return ips[0]
 }
 
 func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string) (string, int, error) {
