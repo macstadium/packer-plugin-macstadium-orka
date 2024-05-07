@@ -152,8 +152,8 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 	}
 
 	if c.PackerVMWaitTimeout == 0 {
-		c.PackerVMWaitTimeout = 10
-	}
+		c.PackerVMWaitTimeout = 5
+	} 
 
 	if es := c.CommConfig.Prepare(nil); len(es) > 0 {
 		errs = packer.MultiErrorAppend(errs, es...)

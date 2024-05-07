@@ -84,6 +84,7 @@ func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string, 
 
 	defer watcher.Stop()
 
+
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Minute)
 	defer cancel()
 
