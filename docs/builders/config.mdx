@@ -95,7 +95,31 @@ The following use cases do not need to be used in most scenarios.
 
 [MacStadium Orka] base images have SSH enabled with username:password  `admin:admin` by default.  See the options from the [SSH Communicator] to see how you can customize that.
 
+# Example Orka CLI Commands
 
+These aren't directly related to this plugin, exactly, but they're a bit of a simplified guide to get you started.  For a more full guide see: [Orka Setup Guide].
+
+```bash
+# Create a config which is used for source_image above
+orka vm create-config -v <vm-name> -c 3 --C 3 --vnc --base-image <base-image> -y
+
+# In essence, this plugin automates running the following 3 commands...
+# Start a VM (using the config above)
+orka vm deploy -v macos-catalina-10-15-5 --vnc -y
+
+# Save a VM's disk to a disk image
+orka image save -v <vmid-here-from-orka-vm-list> -b <destination-image-name> -y
+
+# Stop and remove a VM
+orka vm delete --vm <vmid-here-from-orka-vm-list> -y
+
+# Later to launch future images with this image create a new config to launch...
+orka vm create-config -v <my-new-packerified-vm> -c 3 --C 3 --vnc --base-image <destination-image-name> -y
+# And launch it...
+orka vm deploy -v my-new-packerified-vm --vnc -y
+# Or, alternatively if you're done working with an image and want to delete it...
+orka image delete --image <destination-image-name> -y
+```
 [//]: <> (Ignore, below here are links for ease-of-use above)
 [MacStadium Orka]: https://www.macstadium.com/orka
 [MacStadium]: https://www.macstadium.com
