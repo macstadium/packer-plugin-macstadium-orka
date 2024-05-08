@@ -85,6 +85,7 @@ type FlatConfig struct {
 	OrkaVMBuilderEnableIOBoost *bool             `mapstructure:"orka_enable_io_boost" cty:"orka_enable_io_boost" hcl:"orka_enable_io_boost"`
 	EnableOrkaNodeIPMapping    *bool             `mapstructure:"enable_orka_node_ip_mapping" cty:"enable_orka_node_ip_mapping" hcl:"enable_orka_node_ip_mapping"`
 	OrkaNodeIPMap              map[string]string `mapstructure:"orka_node_ip_map" cty:"orka_node_ip_map" hcl:"orka_node_ip_map"`
+	PackerVMWaitTimeout        *int              `mapstructure:"packer_vm_timeout" cty:"packer_vm_timeout" hcl:"packer_vm_timeout"`
 }
 
 // FlatMapstructure returns a new FlatConfig.
@@ -174,6 +175,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"orka_enable_io_boost":         &hcldec.AttrSpec{Name: "orka_enable_io_boost", Type: cty.Bool, Required: false},
 		"enable_orka_node_ip_mapping":  &hcldec.AttrSpec{Name: "enable_orka_node_ip_mapping", Type: cty.Bool, Required: false},
 		"orka_node_ip_map":             &hcldec.AttrSpec{Name: "orka_node_ip_map", Type: cty.Map(cty.String), Required: false},
+		"packer_vm_timeout":            &hcldec.AttrSpec{Name: "packer_vm_timeout", Type: cty.Number, Required: false},
 	}
 	return s
 }

@@ -3,6 +3,7 @@ package mocks
 import (
 	"context"
 	"errors"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -43,7 +44,7 @@ func (m OrkaClient) Delete(ctx context.Context, obj client.Object, opts ...clien
 	return nil
 }
 
-func (m OrkaClient) WaitForVm(ctx context.Context, namespace, name string) (string, int, error) {
+func (m OrkaClient) WaitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error) {
 	if m.ErrorType == errorTypeWaitForVm {
 		return "", 0, errors.New(m.ErrorType)
 	}
