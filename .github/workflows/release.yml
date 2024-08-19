@@ -27,6 +27,10 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.21
+      - name: Format code
+        run: |
+          make fmt
+          git diff --exit-code
       - name: Describe plugin
         id: plugin_describe
         run: echo "::set-output name=api_version::$(go run . describe | jq -r '.api_version')"

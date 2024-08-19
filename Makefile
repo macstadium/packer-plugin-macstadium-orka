@@ -48,3 +48,15 @@ rebuild: build install clean
 clean:
 	@rm -f $(BIN)
 	@rm -f packer-sdc
+
+.PHONY: fmt
+fmt:
+	@echo "[fmt] Format go project..."
+	@gofmt -s -w . 2>&1
+	@echo "------------------------------------[Done]"
+
+.PHONY: tidy
+tidy:
+	@echo "[tidy] Check for unused modules..."
+	@go mod tidy
+	@echo "------------------------------------[Done]"
