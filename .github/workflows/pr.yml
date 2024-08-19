@@ -3,7 +3,7 @@ name: orka-go-ci
 on:
   pull_request:
     branches:
-      - master
+      - main
 
 env:
   GOLANG_VERSION: "1.21.6"
