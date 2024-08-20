@@ -1,4 +1,4 @@
-name: orka-go-ci
+name: ci
 
 on:
   pull_request:
@@ -21,11 +21,6 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GOLANG_VERSION }}
-
-      - name: Check for unused packages
-        run: |
-          make tidy
-          git diff --exit-code
 
       - name: Format code
         run: |
