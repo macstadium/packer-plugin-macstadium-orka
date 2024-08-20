@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+env:
+  GOLANG_VERSION: "1.21.6"
+
+jobs:
+  ci:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.GOLANG_VERSION }}
+
+      - name: Format code
+        run: |
+          make fmt
+          git diff --exit-code
+
+      - name: Check for unused dependencies
+        run: |
+          make tidy
+          git diff --exit-code
+
+      - name: Run tests
+        run: make test
+
