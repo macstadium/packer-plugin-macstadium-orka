@@ -34,8 +34,8 @@ func (s *stepCreateVm) Run(ctx context.Context, state multistep.StateBag) multis
 			CPU:         config.OrkaVMCPUCore,
 			Tag:         &config.OrkaVMTag,
 			TagRequired: &config.OrkaVMTagRequired,
-			LegacyIO: config.OrkaLegacyIO,
-			NetBoost: config.OrkaNetBoost,
+			LegacyIO:    config.OrkaLegacyIO,
+			NetBoost:    config.OrkaNetBoost,
 		},
 	}
 
