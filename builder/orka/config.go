@@ -52,8 +52,11 @@ type Config struct {
 	// Do not delete after completion, for some manual testing, for internal dev/testing.
 	NoDeleteVM bool `mapstructure:"no_delete_vm"`
 
-	// Enable Boost IO Performance https://orkadocs.macstadium.com/docs/boost-io-performance
-	OrkaVMBuilderEnableIOBoost *bool `mapstructure:"orka_enable_io_boost"`
+	// Enable Orka Netboost, this should be kept on unless building for an old MacOS version
+	OrkaNetBoost *bool `mapstructure:"orka_enable_net_boost"`
+
+	// Enable Legacy IO, this should be kept off unless you are building for Mojave Image
+	OrkaLegacyIO *bool `mapstructure:"orka_enable_legacy_io"`
 
 	// Enable Orka IP Mapping for exposed IP networking
 	EnableOrkaNodeIPMapping bool `mapstructure:"enable_orka_node_ip_mapping"`
@@ -146,9 +149,14 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		c.OrkaVMCPUCore = 3
 	}
 
-	if c.OrkaVMBuilderEnableIOBoost == nil {
+	if c.OrkaNetBoost == nil {
 		defaultIOBoostValue := true
-		c.OrkaVMBuilderEnableIOBoost = &defaultIOBoostValue
+		c.OrkaNetBoost = &defaultIOBoostValue
+	}
+
+	if c.OrkaLegacyIO == nil {
+		defaultLegacyIOValue := false
+		c.OrkaLegacyIO = &defaultLegacyIOValue
 	}
 
 	if c.PackerVMWaitTimeout == 0 {

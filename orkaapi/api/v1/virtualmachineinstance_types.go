@@ -46,6 +46,8 @@ type VirtualMachineInstanceSpec struct {
 	VNCConsole *bool `json:"vncConsole,omitempty"`
 	// The scheduler handling the deployment. One of: default, most-allocated. When set to most-allocated, VirtualMachineInstances are scheduled to OrkaNodes having most of their resources allocated. The default setting keeps used vs free resources balanced between OrkaNodes
 	Scheduler *string `json:"scheduler,omitempty"`
+	// Boolean setting if legacy IO is enabled
+	LegacyIO *bool `json:"legacyIO,omitempty"`
 	// Boolean setting if Network boost is enabled
 	NetBoost *bool `json:"netBoost,omitempty"`
 	// Boolean setting if GPU passthrough is enabled. When enabled, VncConsole must be disabled
