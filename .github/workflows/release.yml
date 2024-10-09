@@ -24,7 +24,7 @@ jobs:
       - name: Unshallow
         run: git fetch --prune --unshallow
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: 1.21
       - name: Describe plugin
@@ -37,9 +37,10 @@ jobs:
           gpg_private_key: ${{ secrets.NEW_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.NEW_PASSPHRASE }}
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v6
         with:
-          version: latest
+          distribution: goreleaser
+          version: "v2"
           args: release --clean --verbose
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
