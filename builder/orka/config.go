@@ -43,6 +43,7 @@ type Config struct {
 	ImageName           string `mapstructure:"image_name" required:"false"`
 	ImageDescription    string `mapstructure:"image_description" required:"false"`
 	ImageForceOverwrite bool   `mapstructure:"image_force_overwrite" required:"false"`
+	SaveToOCI *bool `mapstructure:"save_to_oci_registry" required:"false"`
 
 	Mock MockOptions `mapstructure:"mock" required:"false"`
 
@@ -142,6 +143,11 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		}
 		// log.Printf("No Destination Image Specified. Using default: %s", name)
 		c.ImageName = name
+	}
+	
+	if c.SaveToOCI == nil {
+		defaultSaveToOCIValue := false
+		c.SaveToOCI = &defaultSaveToOCIValue
 	}
 
 	// If we didn't specify the number of cores, set it to the default of 3.
