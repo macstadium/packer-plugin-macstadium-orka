@@ -79,6 +79,7 @@ type FlatConfig struct {
 	ImageName                 *string           `mapstructure:"image_name" required:"false" cty:"image_name" hcl:"image_name"`
 	ImageDescription          *string           `mapstructure:"image_description" required:"false" cty:"image_description" hcl:"image_description"`
 	ImageForceOverwrite       *bool             `mapstructure:"image_force_overwrite" required:"false" cty:"image_force_overwrite" hcl:"image_force_overwrite"`
+	SaveToOCI                 *bool             `mapstructure:"save_to_oci_registry" required:"false" cty:"save_to_oci_registry" hcl:"save_to_oci_registry"`
 	Mock                      *FlatMockOptions  `mapstructure:"mock" required:"false" cty:"mock" hcl:"mock"`
 	NoCreateImage             *bool             `mapstructure:"no_create_image" cty:"no_create_image" hcl:"no_create_image"`
 	NoDeleteVM                *bool             `mapstructure:"no_delete_vm" cty:"no_delete_vm" hcl:"no_delete_vm"`
@@ -170,6 +171,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"image_name":                   &hcldec.AttrSpec{Name: "image_name", Type: cty.String, Required: false},
 		"image_description":            &hcldec.AttrSpec{Name: "image_description", Type: cty.String, Required: false},
 		"image_force_overwrite":        &hcldec.AttrSpec{Name: "image_force_overwrite", Type: cty.Bool, Required: false},
+		"save_to_oci_registry":         &hcldec.AttrSpec{Name: "save_to_oci_registry", Type: cty.Bool, Required: false},
 		"mock":                         &hcldec.BlockSpec{TypeName: "mock", Nested: hcldec.ObjectSpec((*FlatMockOptions)(nil).HCL2Spec())},
 		"no_create_image":              &hcldec.AttrSpec{Name: "no_create_image", Type: cty.Bool, Required: false},
 		"no_delete_vm":                 &hcldec.AttrSpec{Name: "no_delete_vm", Type: cty.Bool, Required: false},
