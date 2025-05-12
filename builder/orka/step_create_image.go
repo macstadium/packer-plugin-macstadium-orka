@@ -16,6 +16,35 @@ type stepCreateImage struct{}
 
 func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get(StateConfig).(*Config)
+
+	if isValidURL(config.ImageName) {
+		return imageSaveOCI(ctx, state, config)
+	} else {
+		return imageSaveNFS(ctx, state,  config)
+	}
+}
+
+func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
+	ui := state.Get(StateUi).(packer.Ui)
+	config := state.Get(StateConfig).(*Config)
+	orkaClient := state.Get(StateOrkaClient).(OrkaClient)
+
+	image := &orkav1.Image{}
+
+	err := orkaClient.Get(context.Background(), client.ObjectKey{Namespace: DefaultOrkaNamespace, Name: config.ImageName}, image)
+	if err == nil && image.Status.State == orkav1.Failed {
+		ui.Say(fmt.Sprintf("Cleaning up image [%s]", config.ImageName))
+		if err := orkaClient.Delete(context.Background(), image); err != nil {
+			ui.Error(fmt.Sprintf("failed to delete image [%s]: %s", config.ImageName, err.Error()))
+		}
+	}
+}
+
+func isValidURL(url string) bool {
+	return false
+}
+
+func imageSaveNFS(ctx context.Context, state multistep.StateBag, config *Config) multistep.StepAction {
 	ui := state.Get(StateUi).(packer.Ui)
 	orkaClient := state.Get(StateOrkaClient).(OrkaClient)
 
@@ -78,18 +107,7 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 	return multistep.ActionContinue
 }
 
-func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
-	ui := state.Get(StateUi).(packer.Ui)
-	config := state.Get(StateConfig).(*Config)
-	orkaClient := state.Get(StateOrkaClient).(OrkaClient)
+func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config) multistep.StepAction {
 
-	image := &orkav1.Image{}
-
-	err := orkaClient.Get(context.Background(), client.ObjectKey{Namespace: DefaultOrkaNamespace, Name: config.ImageName}, image)
-	if err == nil && image.Status.State == orkav1.Failed {
-		ui.Say(fmt.Sprintf("Cleaning up image [%s]", config.ImageName))
-		if err := orkaClient.Delete(context.Background(), image); err != nil {
-			ui.Error(fmt.Sprintf("failed to delete image [%s]: %s", config.ImageName, err.Error()))
-		}
-	}
+	return multistep.ActionContinue
 }
