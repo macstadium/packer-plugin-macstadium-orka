@@ -1,8 +1,13 @@
 package orka
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
@@ -16,11 +21,17 @@ type stepCreateImage struct{}
 
 func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get(StateConfig).(*Config)
+	ui := state.Get(StateUi).(packer.Ui)
 
-	if isValidURL(config.ImageName) {
+	if config.NoCreateImage {
+		ui.Say("Skipping image creation because of 'no_create_image' being set")
+		return multistep.ActionContinue
+	}
+
+	if *config.SaveToOCI {
 		return imageSaveOCI(ctx, state, config)
 	} else {
-		return imageSaveNFS(ctx, state,  config)
+		return imageSaveNFS(ctx, state, config)
 	}
 }
 
@@ -40,10 +51,6 @@ func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
 	}
 }
 
-func isValidURL(url string) bool {
-	return false
-}
-
 func imageSaveNFS(ctx context.Context, state multistep.StateBag, config *Config) multistep.StepAction {
 	ui := state.Get(StateUi).(packer.Ui)
 	orkaClient := state.Get(StateOrkaClient).(OrkaClient)
@@ -54,10 +61,6 @@ func imageSaveNFS(ctx context.Context, state multistep.StateBag, config *Config)
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Hour)
 	defer cancel()
 
-	if config.NoCreateImage {
-		ui.Say("Skipping image creation because of 'no_create_image' being set")
-		return multistep.ActionContinue
-	}
 
 	ui.Say(fmt.Sprintf("Image creation is using VM [%s] in namespace [%s]", vmName, vmNamespace))
 	ui.Say(fmt.Sprintf("Saving new image [%s]", config.ImageName))
@@ -108,6 +111,88 @@ func imageSaveNFS(ctx context.Context, state multistep.StateBag, config *Config)
 }
 
 func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config) multistep.StepAction {
+	ui := state.Get(StateUi).(packer.Ui)
+
+	vmNamespace := config.OrkaVMBuilderNamespace
+	vmName := config.OrkaVMBuilderName
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Hour)
+	defer cancel()
+
+	vmPushAPIPath := fmt.Sprintf("/api/v1/namespaces/%s/vms/%s/push", vmNamespace, vmName)
+	endpoint, err := url.JoinPath(config.OrkaEndpoint, vmPushAPIPath)
+	if err != nil {
+		err := fmt.Errorf("failed to generate VM Push API Endpoint: %w", err)
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
+
+	reqModel := orkav1.OrkaVMPushRequestModel{ImageReference: config.ImageName}
+	reqJSON, err := json.Marshal(reqModel)
+	if err != nil {
+		err := fmt.Errorf("failed to marshal VM Push request: %w", err)
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
+
+	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewBuffer(reqJSON))
+	if err != nil {
+		err := fmt.Errorf("failed to create VM push request: %w", err)
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", config.OrkaAuthToken))
+
+	cl := &http.Client{}
+	response, err := cl.Do(req)
+	if err != nil {
+		err := fmt.Errorf("failed to send VM push request: %w", err)
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
+	defer response.Body.Close()
+
+	ui.Say(fmt.Sprintf("Image push is using VM [%s] in namespace [%s]", vmName, vmNamespace))
+	ui.Say(fmt.Sprintf("Pushing new image to registry [%s]", config.ImageName))
+	ui.Say("Please wait as this can take a little while...")
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		err := fmt.Errorf("failed to read request response body: %w", err)
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
+
+	if response.StatusCode != http.StatusOK {
+		var obj metav1.Status
+		if err := json.Unmarshal(body, &obj); err != nil {
+			err := fmt.Errorf("failed to unmarshal VM push response error. Failed with status code %d: %w", response.StatusCode, err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
+		err := fmt.Errorf("VM push failed with error code %d: %w", response.StatusCode, err)
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
+
+	var r orkav1.OrkaVMPushResponseModel
+	if err := json.Unmarshal(body, &r); err != nil {
+		err := fmt.Errorf("failed to unmarshal VM push response: %w", err)
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
+	
+	ui.Say(fmt.Sprintf("image [%s] pushed successfully", config.ImageName))
 
 	return multistep.ActionContinue
 }
