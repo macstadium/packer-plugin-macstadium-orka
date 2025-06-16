@@ -99,6 +99,17 @@ func lookupIP(orkaEndpoint string) net.IP {
 }
 
 func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error) {
+	var host string
+	var port int
+	err := RetryOnWatcherErrorWithTimeout(ctx, time.Duration(timeout)*time.Minute, func(contextWithTimeout context.Context) error {
+		var err error
+		host, port, err = c.waitForVm(contextWithTimeout, namespace, name, timeout)
+		return err
+	}, 1*time.Second)
+	return host, port, err
+}
+
+func (c *RealOrkaClient) waitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error) {
 	vmiList := &orkav1.VirtualMachineInstanceList{}
 	watcher, err := c.Watch(ctx, vmiList, client.InNamespace(namespace), client.MatchingFields{"metadata.name": name})
 	if err != nil {
@@ -107,9 +118,6 @@ func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string, 
 
 	defer watcher.Stop()
 
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Minute)
-	defer cancel()
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -117,7 +125,7 @@ func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string, 
 
 		case event, ok := <-watcher.ResultChan():
 			if !ok {
-				return "", 0, fmt.Errorf("watcher closed unexpectedly. You can check the status of the VM with 'orka3 vm list %s -n %s'", name, namespace)
+				return "", 0, WatcherError{Err: errors.New("watcher closed unexpectedly")}
 			}
 			vmi := event.Object.(*orkav1.VirtualMachineInstance)
 
@@ -134,15 +142,18 @@ func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string, 
 }
 
 func (c *RealOrkaClient) WaitForImage(ctx context.Context, name string) error {
+	return RetryOnWatcherErrorWithTimeout(ctx, 1*time.Hour, func(contextWithTimeout context.Context) error {
+		return c.waitForImage(contextWithTimeout, name)
+	}, 1*time.Second)
+}
+
+func (c *RealOrkaClient) waitForImage(ctx context.Context, name string) error {
 	imageList := &orkav1.ImageList{}
 	watcher, err := c.Watch(ctx, imageList, client.InNamespace(DefaultOrkaNamespace), client.MatchingFields{"metadata.name": name})
 	if err != nil {
 		return err
 	}
 	defer watcher.Stop()
-
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Hour)
-	defer cancel()
 
 	for {
 		select {
@@ -151,7 +162,7 @@ func (c *RealOrkaClient) WaitForImage(ctx context.Context, name string) error {
 
 		case event, ok := <-watcher.ResultChan():
 			if !ok {
-				return fmt.Errorf("watcher closed unexpectedly. You can check the status of the image with 'orka3 image list %s'", name)
+				return WatcherError{Err: errors.New("watcher closed unexpectedly")}
 			}
 			image := event.Object.(*orkav1.Image)
 

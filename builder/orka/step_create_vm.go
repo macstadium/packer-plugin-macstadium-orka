@@ -3,6 +3,7 @@ package orka
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 	orkav1 "github.com/macstadium/packer-plugin-macstadium-orka/orkaapi/api/v1"
