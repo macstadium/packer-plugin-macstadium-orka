@@ -1,0 +1,28 @@
+name: packer
+
+on:
+  push:
+
+env:
+  PRODUCT_VERSION: "1.10.0" # or: "latest"
+
+jobs:
+  packer:
+    runs-on:
+      - self-hosted
+      - ORKL-10000025
+    name: Run Packer
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup `packer`
+        uses: hashicorp/setup-packer@main
+        id: setup
+        with:
+          version: ${{ env.PRODUCT_VERSION }}
+    container:
+      image: ghcr.io/macstadium/monorepo-dev/orka-clusters:main
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.ORKA_TOKEN_ORKL10000025 }}
