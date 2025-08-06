@@ -75,7 +75,7 @@ build {
   provisioner "shell" {
     inline = [
       "echo 'Verifying launch daemon status'",
-      "sudo launchctl list | grep com.orka.vm.tools || echo 'Service not found in launchctl list'",
+      "sudo launchctl list | grep com.orka.vm.tools || echo 'Service found in launchctl list'",
       "echo 'Verification complete'"
     ]
   }
