@@ -160,7 +160,6 @@ func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config)
 
 	ui.Say(fmt.Sprintf("Image push is using VM [%s] in namespace [%s]", vmName, vmNamespace))
 	ui.Say(fmt.Sprintf("Pushing new image to registry [%s]", config.ImageName))
-	ui.Say("Please wait as this can take a little while...")
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
@@ -192,7 +191,8 @@ func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config)
 		return multistep.ActionHalt
 	}
 	
-	ui.Say(fmt.Sprintf("image [%s] pushed begun successfully. Run `orka3 vm get-push-status %s` to view progress.", config.ImageName, r.JobName))
+	ui.Say(fmt.Sprintf("image [%s] push began successfully.", config.ImageName))
+	ui.Say(fmt.Sprintf("Run `orka3 vm get-push-status %s` to view progress.", r.JobName))
 
 	return multistep.ActionContinue
 }
