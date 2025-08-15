@@ -192,7 +192,7 @@ func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config)
 		return multistep.ActionHalt
 	}
 	
-	ui.Say(fmt.Sprintf("image [%s] pushed successfully", config.ImageName))
+	ui.Say(fmt.Sprintf("image [%s] pushed begun successfully. Run `orka3 vm get-push-status %s` to view progress.", config.ImageName, r.JobName))
 
 	return multistep.ActionContinue
 }

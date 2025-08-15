@@ -79,7 +79,7 @@ type FlatConfig struct {
 	ImageName                 *string           `mapstructure:"image_name" required:"false" cty:"image_name" hcl:"image_name"`
 	ImageDescription          *string           `mapstructure:"image_description" required:"false" cty:"image_description" hcl:"image_description"`
 	ImageForceOverwrite       *bool             `mapstructure:"image_force_overwrite" required:"false" cty:"image_force_overwrite" hcl:"image_force_overwrite"`
-	SaveToOCI                 *bool             `mapstructure:"save_to_oci_registry" required:"false" cty:"save_to_oci_registry" hcl:"save_to_oci_registry"`
+	SaveToOCI                 *bool             `mapstructure:"save_to_oci_registry" cty:"save_to_oci_registry" hcl:"save_to_oci_registry"`
 	Mock                      *FlatMockOptions  `mapstructure:"mock" required:"false" cty:"mock" hcl:"mock"`
 	NoCreateImage             *bool             `mapstructure:"no_create_image" cty:"no_create_image" hcl:"no_create_image"`
 	NoDeleteVM                *bool             `mapstructure:"no_delete_vm" cty:"no_delete_vm" hcl:"no_delete_vm"`
