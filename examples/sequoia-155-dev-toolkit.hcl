@@ -8,7 +8,7 @@ packer {
 }
 
 source "macstadium-orka" "image" {
-  source_image      = "docker pull ghcr.io/macstadium/orka-images/sequoia:latest" // This image has the latest version of Orka VM tools already pre-installed 
+  source_image      = "ghcr.io/macstadium/orka-images/sequoia:latest" // This image has the latest version of Orka VM tools already pre-installed 
   image_name        = "packer-sequoia-155-dev-toolkit"
   image_description = "MacOS Sequoia 15.5 image created with Packer!"
   orka_endpoint     = "http://10.221.188.20"
