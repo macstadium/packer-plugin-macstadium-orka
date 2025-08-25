@@ -7,28 +7,28 @@ packer {
   }
 }
 variable "source_image" {
-  default = env("PKR_VAR_source_image")
+  default = "ghcr.io/macstadium/orka-images/sequoia:latest"
 }
-variable "image_name" {
-  default = env("PKR_VAR_image_name")
+variable "image_name_prefix" {
+  default = "packer"
 }
 variable "orka_endpoint" {
-  default = env("PKR_VAR_orka_endpoint")
+  default = env("ORKA_ENDPOINT")
 }
 variable "orka_auth_token" {
-  default = env("PKR_VAR_orka_auth_token")
+  default = env("ORKA_AUTH_TOKEN")
 }
 variable "ssh_username" {
-  default = env("PKR_VAR_ssh_username")
+  default = "admin"
 }
 variable "ssh_password" {
-  default = env("PKR_VAR_ssh_password")
+  default = "admin"
 }
 
 source "macstadium-orka" "image" {
   source_image      = var.source_image // This image has the latest version of Orka VM tools already pre-installed 
-  image_name        = var.image_name
-  image_description = "MacOS Sequoia 15.5 image created with Packer!"
+  image_name        = "${var.image_name_prefix}-{{timestamp}}"
+  image_description = "MacOS Sequoia 15.5 developer tools image created with Packer!"
   orka_endpoint     = var.orka_endpoint
   orka_auth_token   = var.orka_auth_token
   ssh_username      = var.ssh_username
