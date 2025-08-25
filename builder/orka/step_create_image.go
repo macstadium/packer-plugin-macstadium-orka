@@ -21,8 +21,6 @@ type stepCreateImage struct{}
 
 const IMAGE_SAVE_TIMEOUT time.Duration = 5 * time.Hour
 
-
-
 func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get(StateConfig).(*Config)
 	ui := state.Get(StateUi).(packer.Ui)
@@ -64,7 +62,6 @@ func imageSaveNFS(ctx context.Context, state multistep.StateBag, config *Config)
 
 	ctx, cancel := context.WithTimeout(ctx, IMAGE_SAVE_TIMEOUT)
 	defer cancel()
-
 
 	ui.Say(fmt.Sprintf("Image creation is using VM [%s] in namespace [%s]", vmName, vmNamespace))
 	ui.Say(fmt.Sprintf("Saving new image [%s]", config.ImageName))

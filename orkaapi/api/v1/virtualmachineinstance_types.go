@@ -127,7 +127,6 @@ type OrkaVMPushResponseModel struct {
 	JobName string `json:"jobName"`
 }
 
-
 //+kubebuilder:object:root=true
 
 // VirtualMachineInstanceList contains a list of VirtualMachineInstance

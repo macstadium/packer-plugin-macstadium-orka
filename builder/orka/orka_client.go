@@ -22,9 +22,9 @@ import (
 )
 
 const (
-	OrkaJobTypeLabel = "orka.macstadium.com/job.type"
+	OrkaJobTypeLabel             = "orka.macstadium.com/job.type"
 	OrkaJobTypeRegistryPushValue = "registry-push"
-	OCIImageNameAnnotationKey = "orka.macstadium.com/oci-image"
+	OCIImageNameAnnotationKey    = "orka.macstadium.com/oci-image"
 )
 
 type OrkaClient interface {
