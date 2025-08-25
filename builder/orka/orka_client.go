@@ -13,9 +13,18 @@ import (
 	"time"
 
 	orkav1 "github.com/macstadium/packer-plugin-macstadium-orka/orkaapi/api/v1"
+
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	OrkaJobTypeLabel = "orka.macstadium.com/job.type"
+	OrkaJobTypeRegistryPushValue = "registry-push"
+	OCIImageNameAnnotationKey = "orka.macstadium.com/oci-image"
 )
 
 type OrkaClient interface {
@@ -24,6 +33,7 @@ type OrkaClient interface {
 	Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
 	WaitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error)
 	WaitForImage(ctx context.Context, name string) error
+	WaitForPush(ctx context.Context, name string) error
 }
 
 type RealOrkaClient struct {
@@ -35,6 +45,9 @@ func GetOrkaClient(orkaEndpoint, authToken string) (*RealOrkaClient, error) {
 	sch := runtime.NewScheme()
 	if err := orkav1.AddToScheme(sch); err != nil {
 		log.Fatal("failed to add orkav1 to scheme")
+	}
+	if err := corev1.AddToScheme(sch); err != nil {
+		log.Fatal("failed to add corev1 to scheme")
 	}
 
 	endpoint, err := url.JoinPath(orkaEndpoint, "api", "v1", "cluster-info")
@@ -171,6 +184,45 @@ func (c *RealOrkaClient) waitForImage(ctx context.Context, name string) error {
 				return nil
 			case orkav1.Failed:
 				return errors.New(image.Status.ErrorMessage)
+			}
+		}
+	}
+}
+
+func (c *RealOrkaClient) WaitForPush(ctx context.Context, name string) error {
+	return RetryOnWatcherErrorWithTimeout(ctx, 1*time.Hour, func(contextWithTimeout context.Context) error {
+		return c.waitForPush(contextWithTimeout, name)
+	}, 1*time.Second)
+}
+
+func (c *RealOrkaClient) waitForPush(ctx context.Context, name string) error {
+	matchLabels := client.MatchingLabels{OrkaJobTypeLabel: OrkaJobTypeRegistryPushValue}
+	if len(name) > 0 {
+		matchLabels[batchv1.JobNameLabel] = name
+	}
+
+	pods := &corev1.PodList{}
+	watcher, err := c.Watch(ctx, pods, client.InNamespace(DefaultOrkaNamespace), matchLabels)
+	if err != nil {
+		return fmt.Errorf("watcher failed to initilize: %s", err)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		case event, ok := <-watcher.ResultChan():
+			if !ok {
+				return WatcherError{Err: errors.New("watcher closed unexpectedly")}
+			}
+			p := event.Object.(*corev1.Pod)
+
+			switch p.Status.Phase {
+			case corev1.PodSucceeded:
+				return nil
+			case corev1.PodFailed:
+				return fmt.Errorf("failed to save image: %s", p.Status.Message)
 			}
 		}
 	}

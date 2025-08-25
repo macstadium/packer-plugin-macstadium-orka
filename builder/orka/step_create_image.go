@@ -19,6 +19,10 @@ import (
 
 type stepCreateImage struct{}
 
+const IMAGE_SAVE_TIMEOUT time.Duration = 5 * time.Hour
+
+
+
 func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get(StateConfig).(*Config)
 	ui := state.Get(StateUi).(packer.Ui)
@@ -58,7 +62,7 @@ func imageSaveNFS(ctx context.Context, state multistep.StateBag, config *Config)
 	vmNamespace := config.OrkaVMBuilderNamespace
 	vmName := config.OrkaVMBuilderName
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Hour)
+	ctx, cancel := context.WithTimeout(ctx, IMAGE_SAVE_TIMEOUT)
 	defer cancel()
 
 
@@ -112,11 +116,12 @@ func imageSaveNFS(ctx context.Context, state multistep.StateBag, config *Config)
 
 func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config) multistep.StepAction {
 	ui := state.Get(StateUi).(packer.Ui)
+	orkaClient := state.Get(StateOrkaClient).(OrkaClient)
 
 	vmNamespace := config.OrkaVMBuilderNamespace
 	vmName := config.OrkaVMBuilderName
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Hour)
+	ctx, cancel := context.WithTimeout(ctx, IMAGE_SAVE_TIMEOUT)
 	defer cancel()
 
 	vmPushAPIPath := fmt.Sprintf("/api/v1/namespaces/%s/vms/%s/push", vmNamespace, vmName)
@@ -190,9 +195,13 @@ func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
-	
-	ui.Say(fmt.Sprintf("image [%s] push began successfully.", config.ImageName))
-	ui.Say(fmt.Sprintf("Run `orka3 vm get-push-status %s` to view progress.", r.JobName))
+
+	ui.Say(fmt.Sprintf("image [%s] push began successfully. This may take a while", config.ImageName))
+
+	err = orkaClient.WaitForPush(ctx, r.JobName)
+	if err != nil {
+		ui.Error(fmt.Sprintf("image [%s] push failed: %s", config.ImageName, err))
+	}
 
 	return multistep.ActionContinue
 }
