@@ -20,13 +20,6 @@ build {
   sources = [
     "macstadium-orka.image"
   ]
-  provisioner "shell" {
-    inline = [
-      // Enable passwordless sudo
-      "echo admin | sudo -S sh -c \"mkdir -p /etc/sudoers.d/; echo 'admin ALL=(ALL) NOPASSWD: ALL' | EDITOR=tee visudo /etc/sudoers.d/admin-nopasswd\"",
-      // Enable auto-login
-    ]
-  }
 
   provisioner "shell" {
     inline = [
@@ -49,11 +42,3 @@ build {
       "brew install swift",
     ]
   }
-  provisioner "shell" {
-    inline = [
-      "echo we are running on the remote host",
-      "hostname",
-      "touch .we-ran-packer-successfully"
-    ]
-  }
-}
