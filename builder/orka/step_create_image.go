@@ -20,7 +20,11 @@ import (
 
 type stepCreateImage struct{}
 
-const IMAGE_SAVE_TIMEOUT time.Duration = 5 * time.Hour
+const (
+	IMAGE_SAVE_TIMEOUT time.Duration = 5 * time.Hour
+	WAIT_FOR_SAVE_MESSAGE string = "Please wait as this can take a little while..."
+)
+
 
 func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get(StateConfig).(*Config)
@@ -71,7 +75,7 @@ func imageSaveNFS(ctx context.Context, state multistep.StateBag, config *Config)
 
 	ui.Say(fmt.Sprintf("Image creation is using VM [%s] in namespace [%s]", vmName, vmNamespace))
 	ui.Say(fmt.Sprintf("Saving new image [%s]", config.ImageName))
-	ui.Say("Please wait as this can take a little while...")
+	ui.Say(WAIT_FOR_SAVE_MESSAGE)
 
 	image := &orkav1.Image{
 		ObjectMeta: metav1.ObjectMeta{
@@ -199,7 +203,8 @@ func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config)
 		return multistep.ActionHalt
 	}
 
-	ui.Say(fmt.Sprintf("image [%s] push began successfully. This may take a while", config.ImageName))
+	ui.Say(fmt.Sprintf("image [%s] push began successfully.", config.ImageName))
+	ui.Say(WAIT_FOR_SAVE_MESSAGE)
 
 	err = orkaClient.WaitForPush(ctx, r.JobName)
 	if err != nil {
