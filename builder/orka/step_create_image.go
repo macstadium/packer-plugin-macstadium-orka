@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/docker/distribution/reference"
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 	orkav1 "github.com/macstadium/packer-plugin-macstadium-orka/orkaapi/api/v1"
@@ -30,7 +31,12 @@ func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) mul
 		return multistep.ActionContinue
 	}
 
-	if *config.SaveToOCI {
+	var oci bool
+	if _, err := reference.ParseNamed(config.ImageName); err == nil {
+		oci = true
+	}
+
+	if oci {
 		return imageSaveOCI(ctx, state, config)
 	} else {
 		return imageSaveNFS(ctx, state, config)

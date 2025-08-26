@@ -43,7 +43,6 @@ type Config struct {
 	ImageName           string `mapstructure:"image_name" required:"false"`
 	ImageDescription    string `mapstructure:"image_description" required:"false"`
 	ImageForceOverwrite bool   `mapstructure:"image_force_overwrite" required:"false"`
-	SaveToOCI           *bool  `mapstructure:"save_to_oci_registry"`
 
 	Mock MockOptions `mapstructure:"mock" required:"false"`
 
@@ -148,11 +147,6 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 	// If we didn't specify the number of cores, set it to the default of 3.
 	if c.OrkaVMCPUCore == 0 {
 		c.OrkaVMCPUCore = 3
-	}
-
-	if c.SaveToOCI == nil {
-		defaultOCIValue := false
-		c.SaveToOCI = &defaultOCIValue
 	}
 
 	if c.OrkaNetBoost == nil {
