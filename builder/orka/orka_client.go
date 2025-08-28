@@ -207,6 +207,8 @@ func (c *RealOrkaClient) waitForPush(ctx context.Context, namespace, name string
 		return fmt.Errorf("watcher failed to initilize: %s", err)
 	}
 
+	defer watcher.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
