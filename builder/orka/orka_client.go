@@ -189,20 +189,20 @@ func (c *RealOrkaClient) waitForImage(ctx context.Context, name string) error {
 	}
 }
 
-func (c *RealOrkaClient) WaitForPush(ctx context.Context, name string) error {
+func (c *RealOrkaClient) WaitForPush(ctx context.Context, namespace, name string) error {
 	return RetryOnWatcherErrorWithTimeout(ctx, 1*time.Hour, func(contextWithTimeout context.Context) error {
-		return c.waitForPush(contextWithTimeout, name)
+		return c.waitForPush(contextWithTimeout, namespace, name)
 	}, 1*time.Second)
 }
 
-func (c *RealOrkaClient) waitForPush(ctx context.Context, name string) error {
+func (c *RealOrkaClient) waitForPush(ctx context.Context, namespace, name string) error {
 	matchLabels := client.MatchingLabels{OrkaJobTypeLabel: OrkaJobTypeRegistryPushValue}
 	if len(name) > 0 {
 		matchLabels[batchv1.JobNameLabel] = name
 	}
 
 	pods := &corev1.PodList{}
-	watcher, err := c.Watch(ctx, pods, client.InNamespace(DefaultOrkaNamespace), matchLabels)
+	watcher, err := c.Watch(ctx, pods, client.InNamespace(namespace), matchLabels)
 	if err != nil {
 		return fmt.Errorf("watcher failed to initilize: %s", err)
 	}
