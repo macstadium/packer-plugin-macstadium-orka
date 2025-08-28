@@ -33,7 +33,7 @@ type OrkaClient interface {
 	Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
 	WaitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error)
 	WaitForImage(ctx context.Context, name string) error
-	WaitForPush(ctx context.Context, name string) error
+	WaitForPush(ctx context.Context, namespace, name string) error
 }
 
 type RealOrkaClient struct {

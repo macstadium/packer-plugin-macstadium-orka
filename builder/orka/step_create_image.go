@@ -21,8 +21,8 @@ import (
 type stepCreateImage struct{}
 
 const (
-	IMAGE_SAVE_TIMEOUT    time.Duration = 5 * time.Hour
-	WAIT_FOR_SAVE_MESSAGE string        = "Please wait as this can take a little while..."
+	imageSaveTimeout    time.Duration = 5 * time.Hour
+	waitForSaveMessage  string        = "Please wait as this can take a little while..."
 )
 
 func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
@@ -69,12 +69,12 @@ func imageSaveNFS(ctx context.Context, state multistep.StateBag, config *Config)
 	vmNamespace := config.OrkaVMBuilderNamespace
 	vmName := config.OrkaVMBuilderName
 
-	ctx, cancel := context.WithTimeout(ctx, IMAGE_SAVE_TIMEOUT)
+	ctx, cancel := context.WithTimeout(ctx, imageSaveTimeout)
 	defer cancel()
 
 	ui.Say(fmt.Sprintf("Image creation is using VM [%s] in namespace [%s]", vmName, vmNamespace))
 	ui.Say(fmt.Sprintf("Saving new image [%s]", config.ImageName))
-	ui.Say(WAIT_FOR_SAVE_MESSAGE)
+	ui.Say(waitForSaveMessage)
 
 	image := &orkav1.Image{
 		ObjectMeta: metav1.ObjectMeta{
@@ -127,7 +127,7 @@ func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config)
 	vmNamespace := config.OrkaVMBuilderNamespace
 	vmName := config.OrkaVMBuilderName
 
-	ctx, cancel := context.WithTimeout(ctx, IMAGE_SAVE_TIMEOUT)
+	ctx, cancel := context.WithTimeout(ctx, imageSaveTimeout)
 	defer cancel()
 
 	vmPushAPIPath := fmt.Sprintf("/api/v1/namespaces/%s/vms/%s/push", vmNamespace, vmName)
@@ -203,9 +203,9 @@ func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config)
 	}
 
 	ui.Say(fmt.Sprintf("image [%s] push began successfully.", config.ImageName))
-	ui.Say(WAIT_FOR_SAVE_MESSAGE)
+	ui.Say(waitForSaveMessage)
 
-	err = orkaClient.WaitForPush(ctx, r.JobName)
+	err = orkaClient.WaitForPush(ctx, config.OrkaVMBuilderNamespace, r.JobName)
 	if err != nil {
 		ui.Error(fmt.Sprintf("image [%s] push failed: %s", config.ImageName, err))
 		return multistep.ActionHalt
