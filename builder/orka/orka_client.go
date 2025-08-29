@@ -17,6 +17,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -218,7 +219,13 @@ func (c *RealOrkaClient) waitForPush(ctx context.Context, namespace, name string
 			if !ok {
 				return WatcherError{Err: errors.New("watcher closed unexpectedly")}
 			}
+
+			if event.Type == watch.Deleted {
+				return errors.New("vm push pod has been deleted")
+			}
+
 			p := event.Object.(*corev1.Pod)
+
 
 			switch p.Status.Phase {
 			case corev1.PodSucceeded:
