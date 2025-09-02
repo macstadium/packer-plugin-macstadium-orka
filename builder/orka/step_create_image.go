@@ -21,8 +21,8 @@ import (
 type stepCreateImage struct{}
 
 const (
-	imageSaveTimeout    time.Duration = 5 * time.Hour
-	waitForSaveMessage  string        = "Please wait as this can take a little while..."
+	imageSaveTimeout   time.Duration = 5 * time.Hour
+	waitForSaveMessage string        = "Please wait as this can take a little while..."
 )
 
 func (s *stepCreateImage) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {

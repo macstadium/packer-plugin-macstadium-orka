@@ -226,7 +226,6 @@ func (c *RealOrkaClient) waitForPush(ctx context.Context, namespace, name string
 
 			p := event.Object.(*corev1.Pod)
 
-
 			switch p.Status.Phase {
 			case corev1.PodSucceeded:
 				return nil
