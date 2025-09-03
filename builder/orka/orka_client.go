@@ -26,6 +26,8 @@ const (
 	OrkaJobTypeLabel             = "orka.macstadium.com/job.type"
 	OrkaJobTypeRegistryPushValue = "registry-push"
 	OCIImageNameAnnotationKey    = "orka.macstadium.com/oci-image"
+
+	WatcherClosedError = "watcher closed unexpectedly"
 )
 
 type OrkaClient interface {
@@ -139,7 +141,7 @@ func (c *RealOrkaClient) waitForVm(ctx context.Context, namespace, name string, 
 
 		case event, ok := <-watcher.ResultChan():
 			if !ok {
-				return "", 0, WatcherError{Err: errors.New("watcher closed unexpectedly")}
+				return "", 0, WatcherError{Err: errors.New(WatcherClosedError)}
 			}
 			vmi := event.Object.(*orkav1.VirtualMachineInstance)
 
@@ -176,7 +178,7 @@ func (c *RealOrkaClient) waitForImage(ctx context.Context, name string) error {
 
 		case event, ok := <-watcher.ResultChan():
 			if !ok {
-				return WatcherError{Err: errors.New("watcher closed unexpectedly")}
+				return WatcherError{Err: errors.New(WatcherClosedError)}
 			}
 			image := event.Object.(*orkav1.Image)
 
@@ -218,7 +220,7 @@ func (c *RealOrkaClient) waitForPush(ctx context.Context, namespace, name string
 
 		case event, ok := <-watcher.ResultChan():
 			if !ok {
-				return WatcherError{Err: errors.New("watcher closed unexpectedly")}
+				return WatcherError{Err: errors.New(WatcherClosedError)}
 			}
 
 			if event.Type == watch.Deleted {
