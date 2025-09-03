@@ -16,6 +16,7 @@ const (
 	errorTypeDelete       = "deletion failed"
 	errorTypeWaitForImage = "image creation error"
 	errorTypeWaitForVm    = "vm deployment error"
+	errorTypeWaitForPush  = "vm image push error"
 )
 
 var ErrorTypes = []string{
@@ -23,6 +24,7 @@ var ErrorTypes = []string{
 	errorTypeDelete,
 	errorTypeWaitForImage,
 	errorTypeWaitForVm,
+	errorTypeWaitForPush,
 }
 
 func (m OrkaClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
@@ -54,6 +56,14 @@ func (m OrkaClient) WaitForVm(ctx context.Context, namespace, name string, timeo
 
 func (m OrkaClient) WaitForImage(ctx context.Context, name string) error {
 	if m.ErrorType == errorTypeWaitForImage {
+		return errors.New(m.ErrorType)
+	}
+
+	return nil
+}
+
+func (m OrkaClient) WaitForPush(ctx context.Context, namespace, name string) error {
+	if m.ErrorType == errorTypeWaitForPush {
 		return errors.New(m.ErrorType)
 	}
 
