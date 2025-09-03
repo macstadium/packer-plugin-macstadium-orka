@@ -115,5 +115,15 @@ This should kick off the build.  If everything worked correctly, you should have
 
 If everything was successful, you should have a new image created with your changes saved.
 
+## OCI
+
+In order to use an OCI registry as a image save target, there are a few things that need to be configured. 
+
+* Registry credentials must be configured by an admin using the command `orka3 regcred add`
+* The above credentials must have permissions to push the image to the destination repository
+* The `image_name` variable must be an OCI image name e.g. `example.com/macos/image:latest`
+
+Note: The `source_image` can be either an image CRD name or OCI image name
+
 For more information on using Packer plugins, please visit the [Packer Documentation](https://www.packer.io/docs/plugins).
 For more information on using the Orka Packer plugin, please visit the [Configuration Documentation](./builders/config.mdx).
