@@ -190,6 +190,7 @@ func (c *RealOrkaClient) waitForImage(ctx context.Context, name string) error {
 	}
 }
 
+// TODO: Add configurable image push timeout
 func (c *RealOrkaClient) WaitForPush(ctx context.Context, namespace, name string) error {
 	return RetryOnWatcherErrorWithTimeout(ctx, 1*time.Hour, func(contextWithTimeout context.Context) error {
 		return c.waitForPush(contextWithTimeout, namespace, name)
