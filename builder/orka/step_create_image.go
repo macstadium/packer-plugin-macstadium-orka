@@ -208,6 +208,7 @@ func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config)
 	timeout := config.PackerPushTimeout
 	err = orkaClient.WaitForPush(ctx, config.OrkaVMBuilderNamespace, r.JobName, timeout)
 	if err != nil {
+		state.Put("error", err)
 		ui.Error(fmt.Sprintf("image [%s] push failed: %s", config.ImageName, err))
 		return multistep.ActionHalt
 	}
