@@ -66,6 +66,9 @@ type Config struct {
 
 	// Configuration for VM launch timeout
 	PackerVMWaitTimeout int `mapstructure:"packer_vm_timeout"`
+
+	// Configuration for VM Push timeout
+	PackerPushTimeout int `mapstructure:"packer_push_timeout"`
 }
 
 type MockOptions struct {
@@ -161,6 +164,10 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 
 	if c.PackerVMWaitTimeout == 0 {
 		c.PackerVMWaitTimeout = 10
+	}
+
+	if c.PackerPushTimeout == 0 {
+		c.PackerPushTimeout = 60
 	}
 
 	if es := c.CommConfig.Prepare(nil); len(es) > 0 {

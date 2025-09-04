@@ -75,6 +75,8 @@ build {
 
 * `packer_vm_timeout` _(int)_ (optional): Time packer will wait for a VM to finish launching in minutes. 
 
+* `packer_push_timeout` _(int)_ (optional): Timeout in minutes packer will wait for image to push to an OCI registry. If the timeout is reached, the image will continue to push in the background. Default 60 minutes.
+
 # Development / Internal Variables
 
 If you're NOT a dev working on this software you can ignore the following.

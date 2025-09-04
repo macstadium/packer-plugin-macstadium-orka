@@ -62,7 +62,7 @@ func (m OrkaClient) WaitForImage(ctx context.Context, name string) error {
 	return nil
 }
 
-func (m OrkaClient) WaitForPush(ctx context.Context, namespace, name string) error {
+func (m OrkaClient) WaitForPush(ctx context.Context, timeout int, namespace, name string) error {
 	if m.ErrorType == errorTypeWaitForPush {
 		return errors.New(m.ErrorType)
 	}
