@@ -36,7 +36,7 @@ type OrkaClient interface {
 	Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
 	WaitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error)
 	WaitForImage(ctx context.Context, name string) error
-	WaitForPush(ctx context.Context, timeout int, namespace, name string) error
+	WaitForPush(ctx context.Context, namespace, name string, timeout int) error
 }
 
 type RealOrkaClient struct {
@@ -192,7 +192,7 @@ func (c *RealOrkaClient) waitForImage(ctx context.Context, name string) error {
 	}
 }
 
-func (c *RealOrkaClient) WaitForPush(ctx context.Context, timeout int, namespace, name string) error {
+func (c *RealOrkaClient) WaitForPush(ctx context.Context, namespace, name string, timeout int) error {
 	return RetryOnWatcherErrorWithTimeout(ctx, time.Duration(timeout)*time.Minute, func(contextWithTimeout context.Context) error {
 		return c.waitForPush(contextWithTimeout, namespace, name)
 	}, 1*time.Second)
