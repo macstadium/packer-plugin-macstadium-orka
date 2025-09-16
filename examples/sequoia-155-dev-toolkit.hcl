@@ -35,7 +35,6 @@ source "macstadium-orka" "image" {
   ssh_password      = var.ssh_password
 }
 
-}
 build {
   sources = [
     "macstadium-orka.image"
