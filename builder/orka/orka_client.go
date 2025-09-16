@@ -44,7 +44,7 @@ type RealOrkaClient struct {
 }
 
 // GetOrkaClient returns a runtime client with the on-disk discovery cache enabled
-func GetOrkaClient(orkaEndpoint, authToken string) (*RealOrkaClient, error) {
+func GetOrkaClient(orkaEndpoint, authToken string, config *Config) (*RealOrkaClient, error) {
 	sch := runtime.NewScheme()
 	if err := orkav1.AddToScheme(sch); err != nil {
 		log.Fatal("failed to add orkav1 to scheme")
@@ -86,7 +86,7 @@ func GetOrkaClient(orkaEndpoint, authToken string) (*RealOrkaClient, error) {
 	}
 
 	// Determine if using a public IP address and update config with k8s apiserver name
-	if clusterInfo.APIDomain != "" {
+	if clusterInfo.APIDomain != "" && config.EnableOrkaNodeIPMapping {
 		ip := lookupIP(orkaEndpoint)
 		if ip != nil && !ip.IsPrivate() {
 			restConfig.Host = fmt.Sprintf("https://%s", ip)

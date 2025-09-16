@@ -3,6 +3,7 @@ package orka
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2/hcldec"
 	"github.com/hashicorp/packer-plugin-sdk/communicator"
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
@@ -52,7 +53,7 @@ func (b *Builder) Run(ctx context.Context, ui packer.Ui, hook packer.Hook) (pack
 	var client OrkaClient
 
 	if b.config.Mock == (MockOptions{}) {
-		if c, err := GetOrkaClient(b.config.OrkaEndpoint, b.config.OrkaAuthToken); err != nil {
+		if c, err := GetOrkaClient(b.config.OrkaEndpoint, b.config.OrkaAuthToken, &b.config); err != nil {
 			return nil, fmt.Errorf("failed to create k8s client: %w", err)
 		} else {
 			client = c
