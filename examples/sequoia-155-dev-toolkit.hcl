@@ -35,7 +35,6 @@ source "macstadium-orka" "image" {
   ssh_password      = var.ssh_password
 }
 
-}
 build {
   sources = [
     "macstadium-orka.image"
@@ -43,10 +42,12 @@ build {
 
   provisioner "shell" {
     inline = [
+      "echo 'admin' | sudo -S sh -c 'echo \"admin ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers'",
       "echo 'Installing Homebrew'",
-      "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
+      "NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
     ]
   }
+
   provisioner "shell" {
     inline = [
       "# Add Homebrew to PATH in shell configuration files, use Homebrew to install Fastlane, swiftlint, Git, swift, Cocoapods, and xcodes",
@@ -58,7 +59,7 @@ build {
       "brew install git",
       "brew install cocoapods",
       "brew install xcodesorg/made/xcodes",
-      "brew install swiftlint",
       "brew install swift",
     ]
   }
+}
