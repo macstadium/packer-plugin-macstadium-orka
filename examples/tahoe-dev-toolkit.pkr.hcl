@@ -7,7 +7,7 @@ packer {
   }
 }
 variable "source_image" {
-  default = "ghcr.io/macstadium/orka-images/tahoe:latest"
+  default = "ghcr.io/macstadium/orka-images/tahoe:latest" // This image has the latest version of Orka VM tools already pre-installed
 }
 variable "image_name_prefix" {
   default = "packer"
@@ -26,7 +26,7 @@ variable "ssh_password" {
 }
 
 source "macstadium-orka" "image" {
-  source_image      = var.source_image // This image has the latest version of Orka VM tools already pre-installed 
+  source_image      = var.source_image 
   image_name        = "${var.image_name_prefix}-{{timestamp}}"
   image_description = "MacOS Tahoe and developer tools image created with Packer!"
   orka_endpoint     = var.orka_endpoint
@@ -40,13 +40,20 @@ build {
     "macstadium-orka.image"
   ]
 
-  provisioner "shell" {
-    inline = [
-      "echo 'admin' | sudo -S sh -c 'echo \"admin ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers'",
-      "echo 'Installing Homebrew'",
-      "NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
-    ]
-  }
+provisioner "shell" {
+  execute_command = "echo 'admin' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'"
+  inline = [
+    "echo 'Installing Homebrew'",
+    "echo 'Create homebrew directory with proper permissions'",
+    "mkdir -p /opt/homebrew",
+    "chown -R admin:admin /opt/homebrew",
+    "echo 'Install as the admin user, not root'",
+    "sudo -u admin NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
+    "echo 'Remove temporary sudo access'",
+    "sudo rm -f /etc/sudoers.d/admin-temp",
+    "echo 'Homebrew installation completed and sudo access revoked'"
+  ]
+}
 
   provisioner "shell" {
     inline = [
