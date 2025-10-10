@@ -25,9 +25,9 @@ variable "ssh_password" {
   default = "admin"
 }
 variable "orka_vm_tools_version" {
- type    = string
- description = "Target Orka VM Tools version to install"
- default   = "3.5.0"
+  type        = string
+  description = "Target Orka VM Tools version to install"
+  default     = "3.5.0"
 }
 
 source "macstadium-orka" "image" {
@@ -38,7 +38,6 @@ source "macstadium-orka" "image" {
   orka_auth_token   = var.orka_auth_token
   ssh_username      = var.ssh_username
   ssh_password      = var.ssh_password
-  orka_vm_tools_version = var.orka_vm_tools_version
 }
 
 build {
@@ -64,7 +63,7 @@ build {
       "echo 'Uninstalling old Orka VM Tools if present...'",
       "brew uninstall macstadium/orka/orka-vm-tools --force --ignore-dependencies || true",
       "echo 'Installing Orka VM Tools version ${var.orka_vm_tools_version}...'",
-      "brew install macstadium/orka/orka-vm-tools || true",
+      "brew install macstadium/orka/orka-vm-tools@${var.orka_vm_tools_version} || brew install macstadium/orka/orka-vm-tools",
       "echo 'Verifying Orka VM Tools installation...'",
       "brew list --versions macstadium/orka/orka-vm-tools",
       "which orka-vm-tools || echo 'orka-vm-tools command not found in PATH'",

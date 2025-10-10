@@ -31,14 +31,13 @@ variable "orka_vm_tools_version" {
 }
 
 source "macstadium-orka" "image" {
-  source_image      = var.source_image 
+  source_image      = var.source_image
   image_name        = "${var.image_name_prefix}-{{timestamp}}"
   image_description = "MacOS Tahoe and developer tools image created with Packer!"
   orka_endpoint     = var.orka_endpoint
   orka_auth_token   = var.orka_auth_token
   ssh_username      = var.ssh_username
   ssh_password      = var.ssh_password
-  orka_vm_tools_version = var.orka_vm_tools_version
 }
 
 build {
@@ -46,22 +45,22 @@ build {
     "macstadium-orka.image"
   ]
 
-provisioner "shell" {
-  execute_command = "echo 'admin' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'"
-  inline = [
-    "echo 'Installing Homebrew'",
-    "echo 'Create homebrew directory with proper permissions'",
-    "mkdir -p /opt/homebrew",
-    "chown -R admin:admin /opt/homebrew",
-    "echo 'Install as the admin user, not root'",
-    "sudo -u admin NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
-    "echo 'Remove temporary sudo access'",
-    "sudo rm -f /etc/sudoers.d/admin-temp",
-    "echo 'Homebrew installation completed and sudo access revoked'"
-  ]
-}
+  provisioner "shell" {
+    execute_command = "echo 'admin' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'"
+    inline = [
+      "echo 'Installing Homebrew'",
+      "echo 'Create homebrew directory with proper permissions'",
+      "mkdir -p /opt/homebrew",
+      "chown -R admin:admin /opt/homebrew",
+      "echo 'Install as the admin user, not root'",
+      "sudo -u admin NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
+      "echo 'Remove temporary sudo access'",
+      "sudo rm -f /etc/sudoers.d/admin-temp",
+      "echo 'Homebrew installation completed and sudo access revoked'"
+    ]
+  }
 
-provisioner "shell" {
+  provisioner "shell" {
     inline = [
       "# Update Orka VM Tools to specified version",
       "echo 'Checking current Orka VM Tools version...'",
@@ -71,7 +70,7 @@ provisioner "shell" {
       "echo 'Uninstalling old Orka VM Tools if present...'",
       "brew uninstall macstadium/orka/orka-vm-tools --force --ignore-dependencies || true",
       "echo 'Installing Orka VM Tools version ${var.orka_vm_tools_version}...'",
-      "brew install macstadium/orka/orka-vm-tools || true",
+      "brew install macstadium/orka/orka-vm-tools@${var.orka_vm_tools_version} || brew install macstadium/orka/orka-vm-tools",
       "echo 'Verifying Orka VM Tools installation...'",
       "brew list --versions macstadium/orka/orka-vm-tools",
       "which orka-vm-tools || echo 'orka-vm-tools command not found in PATH'",
