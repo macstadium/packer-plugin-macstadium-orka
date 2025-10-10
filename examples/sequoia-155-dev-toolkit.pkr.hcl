@@ -24,6 +24,11 @@ variable "ssh_username" {
 variable "ssh_password" {
   default = "admin"
 }
+variable "orka_vm_tools_version" {
+ type    = string
+ description = "Target Orka VM Tools version to install"
+ default   = "3.5.0"
+}
 
 source "macstadium-orka" "image" {
   source_image      = var.source_image // This image has the latest version of Orka VM tools already pre-installed 
@@ -33,6 +38,7 @@ source "macstadium-orka" "image" {
   orka_auth_token   = var.orka_auth_token
   ssh_username      = var.ssh_username
   ssh_password      = var.ssh_password
+  orka_vm_tools_version = var.orka_vm_tools_version
 }
 
 build {
@@ -45,6 +51,23 @@ build {
       "echo 'admin' | sudo -S sh -c 'echo \"admin ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers'",
       "echo 'Installing Homebrew'",
       "NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
+    ]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "# Update Orka VM Tools to specified version",
+      "echo 'Checking current Orka VM Tools version...'",
+      "brew list --versions macstadium/orka/orka-vm-tools || echo 'Orka VM Tools not installed via Homebrew'",
+      "echo 'Ensuring MacStadium Orka tap is available...'",
+      "brew tap macstadium/orka || true",
+      "echo 'Uninstalling old Orka VM Tools if present...'",
+      "brew uninstall macstadium/orka/orka-vm-tools --force --ignore-dependencies || true",
+      "echo 'Installing Orka VM Tools version ${var.orka_vm_tools_version}...'",
+      "brew install macstadium/orka/orka-vm-tools || true",
+      "echo 'Verifying Orka VM Tools installation...'",
+      "brew list --versions macstadium/orka/orka-vm-tools",
+      "which orka-vm-tools || echo 'orka-vm-tools command not found in PATH'",
     ]
   }
 
