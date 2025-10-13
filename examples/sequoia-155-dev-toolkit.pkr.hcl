@@ -55,18 +55,15 @@ build {
 
   provisioner "shell" {
     inline = [
-      "# Update Orka VM Tools to specified version",
-      "echo 'Checking current Orka VM Tools version...'",
-      "brew list --versions macstadium/orka/orka-vm-tools || echo 'Orka VM Tools not installed via Homebrew'",
-      "echo 'Ensuring MacStadium Orka tap is available...'",
-      "brew tap macstadium/orka || true",
-      "echo 'Uninstalling old Orka VM Tools if present...'",
-      "brew uninstall macstadium/orka/orka-vm-tools --force --ignore-dependencies || true",
-      "echo 'Installing Orka VM Tools version ${var.orka_vm_tools_version}...'",
-      "brew install macstadium/orka/orka-vm-tools@${var.orka_vm_tools_version} || brew install macstadium/orka/orka-vm-tools",
-      "echo 'Verifying Orka VM Tools installation...'",
-      "brew list --versions macstadium/orka/orka-vm-tools",
-      "which orka-vm-tools || echo 'orka-vm-tools command not found in PATH'",
+      "# Install specific version of Orka VM Tools via PKG",
+      "echo 'Downloading Orka VM Tools ${var.orka_vm_tools_version}...'",
+      "curl -L -o /tmp/orka3.pkg https://cli-builds-public.s3.eu-west-1.amazonaws.com/official/${var.orka_vm_tools_version}/orka3/macos/arm64/orka3.pkg",
+      "echo 'Installing Orka VM Tools from PKG...'",
+      "sudo installer -pkg /tmp/orka3.pkg -target /",
+      "echo 'Cleaning up...'",
+      "rm /tmp/orka3.pkg",
+      "echo 'Verifying installation...'",
+      "orka-vm-tools --version || echo 'Warning: orka-vm-tools not found in PATH'",
     ]
   }
 
