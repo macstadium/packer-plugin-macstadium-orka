@@ -40,20 +40,20 @@ build {
     "macstadium-orka.image"
   ]
 
-provisioner "shell" {
-  execute_command = "echo 'admin' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'"
-  inline = [
-    "echo 'Installing Homebrew'",
-    "echo 'Create homebrew directory with proper permissions'",
-    "mkdir -p /opt/homebrew",
-    "chown -R admin:admin /opt/homebrew",
-    "echo 'Install as the admin user, not root'",
-    "sudo -u admin NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
-    "echo 'Remove temporary sudo access'",
-    "sudo rm -f /etc/sudoers.d/admin-temp",
-    "echo 'Homebrew installation completed and sudo access revoked'"
-  ]
-}
+  provisioner "shell" {
+    inline = [
+      "echo 'Setting up passwordless sudo for admin user'",
+      "echo 'admin' | sudo -S sh -c \"echo 'admin ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/admin-nopasswd\"",
+      "echo 'admin' | sudo -S chmod 0440 /etc/sudoers.d/admin-nopasswd",
+      "echo 'Installing Homebrew'",
+      "echo 'admin' | sudo -S mkdir -p /opt/homebrew",
+      "echo 'admin' | sudo -S chown -R admin:admin /opt/homebrew",
+      "NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
+      "echo 'Cleaning up passwordless sudo'",
+      "echo 'admin' | sudo -S rm -f /etc/sudoers.d/admin-nopasswd",
+      "echo 'Homebrew installation completed'"
+    ]
+  }
 
   provisioner "shell" {
     inline = [
