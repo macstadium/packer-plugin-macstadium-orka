@@ -47,23 +47,16 @@ build {
 
   provisioner "shell" {
     inline = [
-      "echo 'admin' | sudo -S sh -c 'echo \"admin ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers'",
+      "echo 'Setting up passwordless sudo for admin user'",
+      "echo 'admin' | sudo -S sh -c \"echo 'admin ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/admin-nopasswd\"",
+      "echo 'admin' | sudo -S chmod 0440 /etc/sudoers.d/admin-nopasswd",
       "echo 'Installing Homebrew'",
+      "echo 'admin' | sudo -S mkdir -p /opt/homebrew",
+      "echo 'admin' | sudo -S chown -R admin:admin /opt/homebrew",
       "NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
-    ]
-  }
-
-  provisioner "shell" {
-    inline = [
-      "# Install specific version of Orka VM Tools via PKG",
-      "echo 'Downloading Orka VM Tools ${var.orka_vm_tools_version}...'",
-      "curl -L -o /tmp/orka3.pkg https://cli-builds-public.s3.eu-west-1.amazonaws.com/official/${var.orka_vm_tools_version}/orka3/macos/arm64/orka3.pkg",
-      "echo 'Installing Orka VM Tools from PKG...'",
-      "sudo installer -pkg /tmp/orka3.pkg -target /",
-      "echo 'Cleaning up...'",
-      "rm /tmp/orka3.pkg",
-      "echo 'Verifying installation...'",
-      "orka-vm-tools --version || echo 'Warning: orka-vm-tools not found in PATH'",
+      "echo 'Cleaning up passwordless sudo'",
+      "echo 'admin' | sudo -S rm -f /etc/sudoers.d/admin-nopasswd",
+      "echo 'Homebrew installation completed'"
     ]
   }
 
