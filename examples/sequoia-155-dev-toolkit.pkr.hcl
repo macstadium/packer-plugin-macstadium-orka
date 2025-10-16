@@ -42,9 +42,16 @@ build {
 
   provisioner "shell" {
     inline = [
-      "echo 'admin' | sudo -S sh -c 'echo \"admin ALL=(ALL) NOPASSWD: ALL\" >> /etc/sudoers'",
+      "echo 'Setting up passwordless sudo for admin user'",
+      "echo 'admin' | sudo -S sh -c \"echo 'admin ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/admin-nopasswd\"",
+      "echo 'admin' | sudo -S chmod 0440 /etc/sudoers.d/admin-nopasswd",
       "echo 'Installing Homebrew'",
+      "echo 'admin' | sudo -S mkdir -p /opt/homebrew",
+      "echo 'admin' | sudo -S chown -R admin:admin /opt/homebrew",
       "NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
+      "echo 'Cleaning up passwordless sudo'",
+      "echo 'admin' | sudo -S rm -f /etc/sudoers.d/admin-nopasswd",
+      "echo 'Homebrew installation completed'"
     ]
   }
 
