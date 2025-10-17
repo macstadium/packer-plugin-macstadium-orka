@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	"github.com/hashicorp/packer-plugin-sdk/packer"
 	orkav1 "github.com/macstadium/packer-plugin-macstadium-orka/orkaapi/api/v1"
+	"github.com/macstadium/packer-plugin-macstadium-orka/orkaapi/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -139,7 +140,7 @@ func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config)
 		return multistep.ActionHalt
 	}
 
-	reqModel := orkav1.OrkaVMPushRequestModel{ImageReference: config.ImageName}
+	reqModel := models.OrkaVMPushRequestModel{ImageReference: config.ImageName}
 	reqJSON, err := json.Marshal(reqModel)
 	if err != nil {
 		err := fmt.Errorf("failed to marshal VM Push request: %w", err)
@@ -194,7 +195,7 @@ func imageSaveOCI(ctx context.Context, state multistep.StateBag, config *Config)
 		return multistep.ActionHalt
 	}
 
-	var r orkav1.OrkaVMPushResponseModel
+	var r models.OrkaVMPushResponseModel
 	if err := json.Unmarshal(body, &r); err != nil {
 		err := fmt.Errorf("failed to unmarshal VM push response: %w", err)
 		state.Put("error", err)

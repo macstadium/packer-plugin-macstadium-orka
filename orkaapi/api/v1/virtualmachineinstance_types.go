@@ -46,14 +46,20 @@ type VirtualMachineInstanceSpec struct {
 	VNCConsole *bool `json:"vncConsole,omitempty"`
 	// The scheduler handling the deployment. One of: default, most-allocated. When set to most-allocated, VirtualMachineInstances are scheduled to OrkaNodes having most of their resources allocated. The default setting keeps used vs free resources balanced between OrkaNodes
 	Scheduler *string `json:"scheduler,omitempty"`
-	// Boolean setting if legacy IO is enabled
-	LegacyIO *bool `json:"legacyIO,omitempty"`
 	// Boolean setting if Network boost is enabled
 	NetBoost *bool `json:"netBoost,omitempty"`
+	// Boolean setting if legacy IO is enabled
+	LegacyIO *bool `json:"legacyIO,omitempty"`
 	// Boolean setting if GPU passthrough is enabled. When enabled, VncConsole must be disabled
 	GPUPassthrough *bool `json:"gpuPassthrough,omitempty"`
 	// Memory in GiB. Rounded to the nearest 0.1 GiB. If not specified, the VirtualMachineInstance will use the default memory value set in the Orka configuration or will be automatically calculated based on the number of CPU cores
 	Memory *float64 `json:"memory,omitempty"`
+	// Width of virtual display for the virtual machine
+	DisplayWidth int `json:"displayWidth,omitempty"`
+	// Height of virtual display for the virtual machine
+	DisplayHeight int `json:"displayHeight,omitempty"`
+	// DPI of virtual display for the virtual machine
+	DisplayDPI int `json:"displayDPI,omitempty"`
 }
 
 // VMPhase is an enum providing information about the state of the VirtualMachineInstance deployment
@@ -77,6 +83,8 @@ type VirtualMachineInstanceStatus struct {
 	NodeName string `json:"nodeName"`
 	// The IP of the OrkaNode on which the VirtualMachineInstance is running
 	HostIP string `json:"hostIP"`
+	// The IP of the VirtualMachineInstance
+	IP string `json:"ip"`
 	// The SSH port assigned to the VirtualMachineInstance
 	SSHPort *int `json:"sshPort,omitempty"`
 	// The VNC port assigned to the VirtualMachineInstance
@@ -90,7 +98,7 @@ type VirtualMachineInstanceStatus struct {
 	ErrorMessage string `json:"errorMessage"`
 }
 
-//+kubebuilder:printcolumn:name="IP",type=string,JSONPath=`.status.hostIP`
+//+kubebuilder:printcolumn:name="IP",type=string,JSONPath=`.status.ip`
 //+kubebuilder:printcolumn:name="SSH",type=integer,JSONPath=`.status.sshPort`
 //+kubebuilder:printcolumn:name="VNC",type=integer,JSONPath=`.status.vncPort`
 //+kubebuilder:printcolumn:name="Screenshare",type=integer,JSONPath=`.status.screenSharePort`
@@ -100,10 +108,13 @@ type VirtualMachineInstanceStatus struct {
 //+kubebuilder:printcolumn:name="Memory",type=string,JSONPath=`.status.memory`,priority=1
 //+kubebuilder:printcolumn:name="Node",type=string,JSONPath=`.status.nodeName`,priority=1
 //+kubebuilder:printcolumn:name="Architecture",type=string,JSONPath=`.metadata.labels['kubernetes\.io/arch']`,priority=1
-//+kubebuilder:printcolumn:name="Reserved-Ports",type=string,JSONPath=`.spec.reservedPorts`,priority=1
-//+kubebuilder:printcolumn:name="GPU-Passthrough",type=boolean,JSONPath=`.spec.gpuPassthrough`,priority=1
+//+kubebuilder:printcolumn:name="Reserved-Ports",type=string,JSONPath=`.spec.reservedPorts`,priority=2
+//+kubebuilder:printcolumn:name="GPU-Passthrough",type=boolean,JSONPath=`.spec.gpuPassthrough`,priority=2
 //+kubebuilder:printcolumn:name="Owner",type=string,JSONPath=`.metadata.annotations.orka\.macstadium\.com/created-by`,priority=1
 //+kubebuilder:printcolumn:name="Deploy-Date",type=string,JSONPath=`.metadata.creationTimestamp`,priority=1
+//+kubebuilder:printcolumn:name="Display-Width",type=integer,JSONPath=`.spec.displayWidth`,priority=2
+//+kubebuilder:printcolumn:name="Display-Height",type=integer,JSONPath=`.spec.displayHeight`,priority=2
+//+kubebuilder:printcolumn:name="Display-DPI",type=integer,JSONPath=`.spec.displayDPI`,priority=2
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:shortName=vm;vms
@@ -115,16 +126,6 @@ type VirtualMachineInstance struct {
 
 	Spec   VirtualMachineInstanceSpec   `json:"spec"`
 	Status VirtualMachineInstanceStatus `json:"status,omitempty"`
-}
-
-// OrkaVMPushRequestModel describes the expected JSON input data for the vm push operation.
-type OrkaVMPushRequestModel struct {
-	ImageReference string `json:"imageReference" binding:"required" example:"ghcr.io/organization-name/orka-images/base:latest"`
-}
-
-// OrkaVMPushResponseModel describes the JSON response data for the vm push operation.
-type OrkaVMPushResponseModel struct {
-	JobName string `json:"jobName"`
 }
 
 //+kubebuilder:object:root=true
