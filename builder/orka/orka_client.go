@@ -146,7 +146,11 @@ func (c *RealOrkaClient) waitForVm(ctx context.Context, namespace, name string, 
 			vmi := event.Object.(*orkav1.VirtualMachineInstance)
 
 			if vmi.Status.Phase == orkav1.VMRunning {
-				return vmi.Status.HostIP, *vmi.Status.SSHPort, nil
+				ip := vmi.Status.IP
+				if ip == "" {
+					ip = vmi.Status.HostIP
+				}
+				return ip, *vmi.Status.SSHPort, nil
 			}
 
 			if vmi.Status.Phase == orkav1.VMFailed {
