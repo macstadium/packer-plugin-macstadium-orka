@@ -41,6 +41,8 @@ type VirtualMachineConfigSpec struct {
 	VNCConsole *bool `json:"vncConsole,omitempty"`
 	// Boolean setting if Network boost is enabled for VirtualMachineInstances created from the VirtualMachineConfig
 	NetBoost *bool `json:"netBoost,omitempty"`
+	// Boolean setting if legacy IO is enabled for VirtualMachineInstances created from the VirtualMachineConfig
+	LegacyIO *bool `json:"legacyIO,omitempty"`
 	// Boolean setting if GPU passthrough is enabled for VirtualMachineInstances created from the VirtualMachineConfig
 	GPUPassthrough *bool `json:"gpuPassthrough,omitempty"`
 	// +kubebuilder:validation:MinLength=8
@@ -58,6 +60,12 @@ type VirtualMachineConfigSpec struct {
 	Scheduler *string `json:"scheduler,omitempty"`
 	// The name of the node where you want the VirtualMachineInstance to run. If not specified, the VirtualMachineInstance will run on the first available node that matches the criteria (e.g., available CPU and memory, tags, groups, etc.)
 	NodeName *string `json:"nodeName,omitempty"`
+	// The width of the virtual display in pixels for VirtualMachineInstances created from the VirtualMachineConfig
+	DisplayWidth int `json:"displayWidth,omitempty"`
+	// The height of the virtual display in pixels for VirtualMachineInstances created from the VirtualMachineConfig
+	DisplayHeight int `json:"displayHeight,omitempty"`
+	// The DPI (dots per inch) of the virtual display for VirtualMachineInstances created from the VirtualMachineConfig
+	DisplayDPI int `json:"displayDPI,omitempty"`
 }
 
 // +kubebuilder:printcolumn:name="Image",type=string,JSONPath=`.spec.image`
@@ -68,10 +76,14 @@ type VirtualMachineConfigSpec struct {
 // +kubebuilder:printcolumn:name="Scheduler",type=string,JSONPath=`.spec.scheduler`,priority=1
 // +kubebuilder:printcolumn:name="Tag",type=string,JSONPath=`.spec.tag`,priority=1
 // +kubebuilder:printcolumn:name="Tag_Required",type=boolean,JSONPath=`.spec.tagRequired`,priority=1
+// +kubebuilder:printcolumn:name="Node_Name",type=string,JSONPath=`.spec.nodeName`,priority=1
 // +kubebuilder:printcolumn:name="GPU",type=boolean,JSONPath=`.spec.gpuPassthrough`,priority=1
 // +kubebuilder:printcolumn:name="Net_Boost",type=boolean,JSONPath=`.spec.netBoost`,priority=1
 // +kubebuilder:printcolumn:name="System_Serial",type=string,JSONPath=`.spec.systemSerial`,priority=1
 // +kubebuilder:printcolumn:name="Owner",type=string,JSONPath=`.metadata.annotations.orka\.macstadium\.com/created-by`,priority=1
+// +kubebuilder:printcolumn:name="Display_Width",type=integer,JSONPath=`.spec.displayWidth`,priority=1
+// +kubebuilder:printcolumn:name="Display_Height",type=integer,JSONPath=`.spec.displayHeight`,priority=1
+// +kubebuilder:printcolumn:name="Display_DPI",type=integer,JSONPath=`.spec.displayDPI`,priority=1
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=vmconfig;vmconfigs
 

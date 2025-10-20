@@ -29,8 +29,10 @@ func init() {
 
 // ImageSpec describes the desired state of Image
 type ImageSpec struct {
-	// The size of the image file in formatted bytes
+	// The virtual size of the image file in formatted bytes
 	Size resource.Quantity `json:"size,omitempty"`
+	// The amount of storage the image file actually consumes in formatted bytes
+	SpaceUsed resource.Quantity `json:"spaceUsed,omitempty"`
 	// The user who initially created the image file represented by the Image
 	Owner string `json:"owner,omitempty"`
 	// The name of an Image, RemoteImage or VirtualMachineInstance to use as a source for a specific Image operation. Must match the SourceType
@@ -76,7 +78,9 @@ const (
 )
 
 //+kubebuilder:printcolumn:name="Description",type=string,JSONPath=`.metadata.annotations['orka\.macstadium\.com/description']`
+//+kubebuilder:printcolumn:name="Image-Id",type=string,JSONPath=`.metadata.labels['orka\.macstadium\.com/image-id']`
 //+kubebuilder:printcolumn:name="Size",type=string,JSONPath=`.spec.size`
+//+kubebuilder:printcolumn:name="Space-Used",type=string,JSONPath=`.spec.spaceUsed`,priority=1
 //+kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.metadata.labels['kubernetes\.io/arch']`
 //+kubebuilder:printcolumn:name="State",type=string,JSONPath=`.status.state`
 //+kubebuilder:printcolumn:name="Error",type=string,JSONPath=`.status.errorMessage`,priority=1
