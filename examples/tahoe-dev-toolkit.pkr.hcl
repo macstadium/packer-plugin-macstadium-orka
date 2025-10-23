@@ -24,9 +24,15 @@ variable "ssh_username" {
 variable "ssh_password" {
   default = "admin"
 }
+variable "admin_username" {
+  default = "username"
+}
+variable "admin_password" {
+  default = "password"
+}
 
 source "macstadium-orka" "image" {
-  source_image      = var.source_image 
+  source_image      = var.source_image
   image_name        = "${var.image_name_prefix}-{{timestamp}}"
   image_description = "MacOS Tahoe and developer tools image created with Packer!"
   orka_endpoint     = var.orka_endpoint
@@ -40,27 +46,27 @@ build {
     "macstadium-orka.image"
   ]
 
-provisioner "shell" {
-  execute_command = "echo 'admin' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'"
-  inline = [
-    "echo 'Installing Homebrew'",
-    "echo 'Create homebrew directory with proper permissions'",
-    "mkdir -p /opt/homebrew",
-    "chown -R admin:admin /opt/homebrew",
-    "echo 'Install as the admin user, not root'",
-    "sudo -u admin NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
-    "echo 'Remove temporary sudo access'",
-    "sudo rm -f /etc/sudoers.d/admin-temp",
-    "echo 'Homebrew installation completed and sudo access revoked'"
-  ]
-}
+  provisioner "shell" {
+    inline = [
+      "echo 'Setting up passwordless sudo for admin user'",
+      "echo '${var.ssh_password}' | sudo -S sh -c \"echo '${var.ssh_username} ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/${var.ssh_username}-nopasswd\"",
+      "echo '${var.ssh_password}' | sudo -S chmod 0644 /etc/sudoers.d/${var.ssh_username}-nopasswd",
+      "echo 'Installing Homebrew'",
+      "echo '${var.ssh_password}' | sudo -S mkdir -p /opt/homebrew",
+      "echo '${var.ssh_password}' | sudo -S chown -R ${var.ssh_username}:${var.ssh_username} /opt/homebrew",
+      "NONINTERACTIVE=1 /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"",
+      "echo 'Cleaning up passwordless sudo'",
+      "echo '${var.ssh_password}' | sudo -S rm -f /etc/sudoers.d/${var.ssh_username}-nopasswd",
+      "echo 'Homebrew installation completed'"
+    ]
+  }
 
   provisioner "shell" {
     inline = [
       "# Add Homebrew to PATH in shell configuration files, use Homebrew to install Fastlane, swiftlint, Git, swift, Cocoapods, and xcodes",
       // Add or delete tools from this section as needed for your use case, XCodes will require your AppleID and password to install whichever version of XCode you specify.
-      "echo >> /Users/admin/.zprofile",
-      "echo 'eval \"$(/opt/homebrew/bin/brew shellenv\"' >> /Users/admin/.zprofile",
+      "echo >> /Users/${var.ssh_username}/.zprofile",
+      "echo 'eval \"$(/opt/homebrew/bin/brew shellenv\"' >> /Users/${var.ssh_username}/.zprofile",
       "eval \"$(/opt/homebrew/bin/brew shellenv)\"",
       "brew install fastlane",
       "brew install git",
