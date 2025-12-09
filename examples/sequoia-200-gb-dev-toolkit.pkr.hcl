@@ -57,8 +57,7 @@ build {
 
   provisioner "shell" {
     inline = [
-      "# Add Homebrew to PATH in shell configuration files, use Homebrew to install Fastlane, swiftlint, Git, swift, and Cocoapods",
-      // Add or delete tools from this section as needed for your use case, XCodes will require your AppleID and password to install whichever version of XCode you specify.
+      "// Add or delete tools from this section as needed for your use case.
       "echo >> /Users/${var.ssh_username}/.zprofile",
       "echo 'eval \"$(/opt/homebrew/bin/brew shellenv\"' >> /Users/${var.ssh_username}/.zprofile",
       "eval \"$(/opt/homebrew/bin/brew shellenv)\"",
