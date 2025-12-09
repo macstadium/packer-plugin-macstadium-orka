@@ -57,7 +57,9 @@ build {
 
   provisioner "shell" {
     inline = [
-      "// Add or delete tools from this section as needed for your use case.
+      "# Configure Homebrew PATH and install development tools",
+      "# Note: Homebrew is installed in previous provisioner",
+      "# Add or delete tools from this list as needed for your use case",
       "echo >> /Users/${var.ssh_username}/.zprofile",
       "echo 'eval \"$(/opt/homebrew/bin/brew shellenv\"' >> /Users/${var.ssh_username}/.zprofile",
       "eval \"$(/opt/homebrew/bin/brew shellenv)\"",
