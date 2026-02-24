@@ -35,7 +35,7 @@ type OrkaClient interface {
 	Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error
 	Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
 	WaitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error)
-	WaitForImage(ctx context.Context, name string) error
+	WaitForImage(ctx context.Context, namespace, name string) error
 	WaitForPush(ctx context.Context, namespace, name string, timeout int) error
 }
 
@@ -161,15 +161,15 @@ func (c *RealOrkaClient) waitForVm(ctx context.Context, namespace, name string, 
 	}
 }
 
-func (c *RealOrkaClient) WaitForImage(ctx context.Context, name string) error {
+func (c *RealOrkaClient) WaitForImage(ctx context.Context, namespace, name string) error {
 	return RetryOnWatcherErrorWithTimeout(ctx, 1*time.Hour, func(contextWithTimeout context.Context) error {
-		return c.waitForImage(contextWithTimeout, name)
+		return c.waitForImage(contextWithTimeout, namespace, name)
 	}, 1*time.Second)
 }
 
-func (c *RealOrkaClient) waitForImage(ctx context.Context, name string) error {
+func (c *RealOrkaClient) waitForImage(ctx context.Context, namespace, name string) error {
 	imageList := &orkav1.ImageList{}
-	watcher, err := c.Watch(ctx, imageList, client.InNamespace(DefaultOrkaNamespace), client.MatchingFields{"metadata.name": name})
+	watcher, err := c.Watch(ctx, imageList, client.InNamespace(namespace), client.MatchingFields{"metadata.name": name})
 	if err != nil {
 		return err
 	}

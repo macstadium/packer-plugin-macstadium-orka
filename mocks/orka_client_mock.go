@@ -54,7 +54,7 @@ func (m OrkaClient) WaitForVm(ctx context.Context, namespace, name string, timeo
 	return "1.2.3.4", 1234, nil
 }
 
-func (m OrkaClient) WaitForImage(ctx context.Context, name string) error {
+func (m OrkaClient) WaitForImage(ctx context.Context, namespace, name string) error {
 	if m.ErrorType == errorTypeWaitForImage {
 		return errors.New(m.ErrorType)
 	}

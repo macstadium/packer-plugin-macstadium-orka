@@ -54,7 +54,7 @@ func (s *stepCreateImage) Cleanup(state multistep.StateBag) {
 
 	image := &orkav1.Image{}
 
-	err := orkaClient.Get(context.Background(), client.ObjectKey{Namespace: DefaultOrkaNamespace, Name: config.ImageName}, image)
+	err := orkaClient.Get(context.Background(), client.ObjectKey{Namespace: config.OrkaVMBuilderNamespace, Name: config.ImageName}, image)
 	if err == nil && image.Status.State == orkav1.Failed {
 		ui.Say(fmt.Sprintf("Cleaning up image [%s]", config.ImageName))
 		if err := orkaClient.Delete(context.Background(), image); err != nil {
@@ -79,7 +79,7 @@ func imageSaveNFS(ctx context.Context, state multistep.StateBag, config *Config)
 
 	image := &orkav1.Image{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: DefaultOrkaNamespace,
+			Namespace: config.OrkaVMBuilderNamespace,
 			Name:      config.ImageName,
 			Annotations: map[string]string{
 				DescriptionAnnotationKey: config.ImageDescription,
@@ -109,7 +109,7 @@ func imageSaveNFS(ctx context.Context, state multistep.StateBag, config *Config)
 		return multistep.ActionHalt
 	}
 
-	if err := orkaClient.WaitForImage(ctx, config.ImageName); err != nil {
+	if err := orkaClient.WaitForImage(ctx, config.OrkaVMBuilderNamespace, config.ImageName); err != nil {
 		err := fmt.Errorf("failed to save the image: %w", err)
 		state.Put("error", err)
 		ui.Error(err.Error())
