@@ -45,6 +45,9 @@ build {
       "echo 'Setting up passwordless sudo for admin user'",
       "echo '${var.ssh_password}' | sudo -S sh -c \"echo '${var.ssh_username} ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/${var.ssh_username}-nopasswd\"",
       "echo '${var.ssh_password}' | sudo -S chmod 0644 /etc/sudoers.d/${var.ssh_username}-nopasswd",
+      "echo 'Installing Xcode Command Line Tools'",
+      "if ! xcode-select -p &>/dev/null; then touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress; sudo softwareupdate -i \"$(softwareupdate -l 2>&1 | grep '\\*.*Command Line' | tail -1 | sed 's/^[^C]* //')\" --agree-to-license; rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress; fi",
+      "echo 'Xcode CLT setup complete'",
       "echo 'Installing Homebrew'",
       "echo '${var.ssh_password}' | sudo -S mkdir -p /opt/homebrew",
       "echo '${var.ssh_password}' | sudo -S chown -R ${var.ssh_username}:${var.ssh_username} /opt/homebrew",
@@ -60,7 +63,7 @@ build {
       "# Add Homebrew to PATH in shell configuration files, use Homebrew to install Fastlane, swiftlint, Git, swift, Cocoapods, and xcodes",
       // Add or delete tools from this section as needed for your use case, XCodes will require your AppleID and password to install whichever version of XCode you specify.
       "echo >> /Users/${var.ssh_username}/.zprofile",
-      "echo 'eval \"$(/opt/homebrew/bin/brew shellenv\"' >> /Users/${var.ssh_username}/.zprofile",
+      "echo 'eval \"$(/opt/homebrew/bin/brew shellenv)\"' >> /Users/${var.ssh_username}/.zprofile",
       "eval \"$(/opt/homebrew/bin/brew shellenv)\"",
       "brew install fastlane",
       "brew install git",
