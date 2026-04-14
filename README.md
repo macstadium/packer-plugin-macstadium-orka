@@ -19,7 +19,7 @@ Then, run [`packer init`](https://www.packer.io/docs/commands/init).
 packer {
   required_plugins {
     macstadium-orka = {
-      version = "= 3.0.1"
+      version = "= 3.1.2"
       source  = "github.com/macstadium/macstadium-orka"
     }
   }
