@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     macstadium-orka = {
-      version = "= 3.0.1"
+      version = "= 3.1.2"
       source  = "github.com/macstadium/macstadium-orka"
     }
   }
@@ -23,12 +23,6 @@ variable "ssh_username" {
 }
 variable "ssh_password" {
   default = "admin"
-}
-variable "admin_username" {
-  default = "username"
-}
-variable "admin_password" {
-  default = "password"
 }
 
 source "macstadium-orka" "image" {
@@ -74,8 +68,8 @@ build {
       "brew install fastlane",
       "brew install git",
       "brew install cocoapods",
-      "brew install xcodesorg/made/xcodes",
       "brew install swift",
+      "# Note: Install Xcode via xcodes using your Apple ID after image is created",
     ]
   }
 }

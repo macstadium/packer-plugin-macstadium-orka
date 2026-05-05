@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     macstadium-orka = {
-      version = "= 3.0.1"
+      version = "= 3.1.2"
       source  = "github.com/macstadium/macstadium-orka"
     }
   }
@@ -70,7 +70,6 @@ build {
       "brew install git",
       "brew install cocoapods",
       "brew install swift",
-      "",
       "# Note: Install Xcode via xcodes using your Apple ID after image is created",
     ]
   }
