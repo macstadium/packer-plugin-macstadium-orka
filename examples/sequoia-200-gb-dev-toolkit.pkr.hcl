@@ -33,6 +33,7 @@ source "macstadium-orka" "image" {
   orka_auth_token   = var.orka_auth_token
   ssh_username      = var.ssh_username
   ssh_password      = var.ssh_password
+  ssh_timeout       = "15m"
 }
 
 build {
@@ -46,7 +47,7 @@ build {
       "echo '${var.ssh_password}' | sudo -S sh -c \"echo '${var.ssh_username} ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/${var.ssh_username}-nopasswd\"",
       "echo '${var.ssh_password}' | sudo -S chmod 0644 /etc/sudoers.d/${var.ssh_username}-nopasswd",
       "echo 'Installing Xcode Command Line Tools'",
-      "if ! xcode-select -p &>/dev/null; then touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress; CLT_LABEL=$(sudo softwareupdate -l 2>&1 | grep '\\* Label: Command Line' | sed 's/.*Label: //' | tail -1); echo \"CLT package: $CLT_LABEL\"; [ -n \"$CLT_LABEL\" ] || { echo 'ERROR: Command Line Tools not found in softwareupdate catalog'; echo 'Full softwareupdate catalog:'; sudo softwareupdate -l 2>&1; rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress; exit 1; }; sudo softwareupdate -i \"$CLT_LABEL\" --agree-to-license; rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress; xcode-select -p || { echo 'ERROR: CLT install did not complete'; exit 1; }; fi",
+      "if ! xcode-select -p &>/dev/null; then touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress; sleep 5; CLT_LABEL=$(sudo softwareupdate -l 2>&1 | grep '\\* Label: Command Line' | sed 's/.*Label: //' | tail -1); echo \"CLT package: $CLT_LABEL\"; if [ -n \"$CLT_LABEL\" ]; then sudo softwareupdate -i \"$CLT_LABEL\" --agree-to-license; else echo 'CLT not in softwareupdate catalog, trying xcode-select --install...'; sudo xcode-select --install 2>/dev/null || true; for i in $(seq 1 60); do xcode-select -p &>/dev/null && break; echo \"Waiting for CLT... attempt $i/60\"; sleep 10; done; fi; rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress; xcode-select -p || { echo 'ERROR: CLT install failed'; exit 1; }; fi",
       "echo 'Xcode CLT setup complete'",
       "echo 'Installing Homebrew'",
       "echo '${var.ssh_password}' | sudo -S mkdir -p /opt/homebrew",
