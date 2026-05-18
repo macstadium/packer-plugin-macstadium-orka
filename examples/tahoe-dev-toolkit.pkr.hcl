@@ -37,7 +37,7 @@ source "macstadium-orka" "image" {
   orka_auth_token   = var.orka_auth_token
   ssh_username      = var.ssh_username
   ssh_password      = var.ssh_password
-  ssh_timeout       = "15m"
+  ssh_timeout       = "25m"
 }
 
 build {
