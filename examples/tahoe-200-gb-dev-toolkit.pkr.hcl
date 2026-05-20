@@ -7,7 +7,7 @@ packer {
   }
 }
 variable "source_image" {
-  default = "ghcr.io/macstadium/orka-images/tahoe:200-gb"
+  default = "ghcr.io/macstadium/orka-images/tahoe:200-gb-clt"
 }
 variable "image_name_prefix" {
   default = "packer"
@@ -24,11 +24,6 @@ variable "ssh_username" {
 variable "ssh_password" {
   default = "admin"
 }
-variable "clt_dmg_url" {
-  default     = ""
-  description = "URL to the Command Line Tools for Xcode DMG. Required on macOS Tahoe — download from developer.apple.com and host at an accessible URL. Leave empty if CLT is already installed in the source image."
-}
-
 source "macstadium-orka" "image" {
   source_image      = var.source_image // This image has the latest version of Orka VM tools already pre-installed 
   image_name        = "${var.image_name_prefix}-{{timestamp}}"
@@ -50,9 +45,9 @@ build {
       "echo 'Setting up passwordless sudo for admin user'",
       "echo '${var.ssh_password}' | sudo -S sh -c \"echo '${var.ssh_username} ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/${var.ssh_username}-nopasswd\"",
       "echo '${var.ssh_password}' | sudo -S chmod 0644 /etc/sudoers.d/${var.ssh_username}-nopasswd",
-      "echo 'Installing Xcode Command Line Tools'",
-      "if ! xcode-select -p &>/dev/null; then [ -n '${var.clt_dmg_url}' ] || { echo 'ERROR: clt_dmg_url is required on macOS Tahoe. Download Command Line Tools for Xcode from developer.apple.com, host the DMG at an accessible URL, and pass it via -var clt_dmg_url=<url>.'; exit 1; }; echo 'Downloading CLT DMG...'; curl -fsSL '${var.clt_dmg_url}' -o /tmp/clt.dmg; echo 'Mounting CLT DMG...'; hdiutil attach /tmp/clt.dmg -mountpoint /Volumes/CLT -quiet; echo 'Installing CLT...'; sudo installer -pkg '/Volumes/CLT/Command Line Tools.pkg' -target /; hdiutil detach /Volumes/CLT -quiet; rm /tmp/clt.dmg; xcode-select -p || { echo 'ERROR: CLT install did not complete'; exit 1; }; fi",
-      "echo 'Xcode CLT setup complete'",
+      "echo 'Verifying Xcode Command Line Tools'",
+      "xcode-select -p || { echo 'ERROR: CLT not found in source image. Use ghcr.io/macstadium/orka-images/tahoe:200-gb-clt as source_image.'; exit 1; }",
+      "echo 'Xcode CLT verified'",
       "echo 'Installing Homebrew'",
       "echo '${var.ssh_password}' | sudo -S mkdir -p /opt/homebrew",
       "echo '${var.ssh_password}' | sudo -S chown -R ${var.ssh_username}:${var.ssh_username} /opt/homebrew",
