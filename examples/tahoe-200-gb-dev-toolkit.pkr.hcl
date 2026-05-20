@@ -24,6 +24,7 @@ variable "ssh_username" {
 variable "ssh_password" {
   default = "admin"
 }
+
 source "macstadium-orka" "image" {
   source_image      = var.source_image // This image has the latest version of Orka VM tools already pre-installed 
   image_name        = "${var.image_name_prefix}-{{timestamp}}"
@@ -60,9 +61,6 @@ build {
 
   provisioner "shell" {
     inline = [
-      "# Configure Homebrew PATH and install development tools",
-      "# Note: Homebrew is installed in previous provisioner",
-      "# Add or delete tools from this list as needed for your use case",
       "echo >> /Users/${var.ssh_username}/.zprofile",
       "echo 'eval \"$(/opt/homebrew/bin/brew shellenv)\"' >> /Users/${var.ssh_username}/.zprofile",
       "eval \"$(/opt/homebrew/bin/brew shellenv)\"",
