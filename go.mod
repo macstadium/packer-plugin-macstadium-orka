@@ -1,6 +1,6 @@
 module github.com/macstadium/packer-plugin-macstadium-orka
 
-go 1.21
+go 1.23.0
 
 require (
 	github.com/docker/distribution v2.7.1+incompatible
@@ -15,7 +15,7 @@ require (
 
 require (
 	cloud.google.com/go v0.105.0 // indirect
-	cloud.google.com/go/compute/metadata v0.2.0 // indirect
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	cloud.google.com/go/iam v0.6.0 // indirect
 	cloud.google.com/go/storage v1.27.0 // indirect
 	github.com/Azure/go-ntlmssp v0.0.0-20200615164410-66371956d46c // indirect
@@ -101,7 +101,7 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167 // indirect
 	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/oauth2 v0.5.0 // indirect
+	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.11.0 // indirect
