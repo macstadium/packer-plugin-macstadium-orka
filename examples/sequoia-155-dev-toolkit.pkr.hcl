@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     macstadium-orka = {
-      version = "= 3.0.1"
+      version = "= 3.1.2"
       source  = "github.com/macstadium/macstadium-orka"
     }
   }
@@ -45,6 +45,9 @@ build {
       "echo 'Setting up passwordless sudo for admin user'",
       "echo '${var.ssh_password}' | sudo -S sh -c \"echo '${var.ssh_username} ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/${var.ssh_username}-nopasswd\"",
       "echo '${var.ssh_password}' | sudo -S chmod 0644 /etc/sudoers.d/${var.ssh_username}-nopasswd",
+      "echo 'Installing Xcode Command Line Tools'",
+      "if ! xcode-select -p &>/dev/null; then touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress; sleep 5; CLT_LABEL=$(sudo softwareupdate -l 2>&1 | grep '\\* Label: Command Line' | sed 's/.*Label: //' | tail -1); echo \"CLT package: $CLT_LABEL\"; if [ -n \"$CLT_LABEL\" ]; then sudo softwareupdate -i \"$CLT_LABEL\" --agree-to-license; else echo 'CLT not in softwareupdate catalog, trying xcode-select --install...'; sudo xcode-select --install 2>/dev/null || true; for i in $(seq 1 60); do xcode-select -p &>/dev/null && break; echo \"Waiting for CLT... attempt $i/60\"; sleep 10; done; fi; rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress; xcode-select -p || { echo 'ERROR: CLT install failed'; exit 1; }; fi",
+      "echo 'Xcode CLT setup complete'",
       "echo 'Installing Homebrew'",
       "echo '${var.ssh_password}' | sudo -S mkdir -p /opt/homebrew",
       "echo '${var.ssh_password}' | sudo -S chown -R ${var.ssh_username}:${var.ssh_username} /opt/homebrew",
@@ -57,16 +60,14 @@ build {
 
   provisioner "shell" {
     inline = [
-      "# Add Homebrew to PATH in shell configuration files, use Homebrew to install Fastlane, swiftlint, Git, swift, Cocoapods, and xcodes",
-      // Add or delete tools from this section as needed for your use case, XCodes will require your AppleID and password to install whichever version of XCode you specify.
       "echo >> /Users/${var.ssh_username}/.zprofile",
-      "echo 'eval \"$(/opt/homebrew/bin/brew shellenv\"' >> /Users/${var.ssh_username}/.zprofile",
+      "echo 'eval \"$(/opt/homebrew/bin/brew shellenv)\"' >> /Users/${var.ssh_username}/.zprofile",
       "eval \"$(/opt/homebrew/bin/brew shellenv)\"",
       "brew install fastlane",
       "brew install git",
       "brew install cocoapods",
-      "brew install xcodesorg/made/xcodes",
       "brew install swift",
+      "# Note: Install Xcode via xcodes using your Apple ID after image is created",
     ]
   }
 }

@@ -1,13 +1,13 @@
 packer {
   required_plugins {
     macstadium-orka = {
-      version = "= 3.0.1"
+      version = "= 3.1.2"
       source  = "github.com/macstadium/macstadium-orka"
     }
   }
 }
 variable "source_image" {
-  default = "ghcr.io/macstadium/orka-images/tahoe:200-gb"
+  default = "ghcr.io/macstadium/orka-images/tahoe:200-gb-clt"
 }
 variable "image_name_prefix" {
   default = "packer"
@@ -33,6 +33,7 @@ source "macstadium-orka" "image" {
   orka_auth_token   = var.orka_auth_token
   ssh_username      = var.ssh_username
   ssh_password      = var.ssh_password
+  ssh_timeout       = "25m"
 }
 
 build {
@@ -45,6 +46,9 @@ build {
       "echo 'Setting up passwordless sudo for admin user'",
       "echo '${var.ssh_password}' | sudo -S sh -c \"echo '${var.ssh_username} ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/${var.ssh_username}-nopasswd\"",
       "echo '${var.ssh_password}' | sudo -S chmod 0644 /etc/sudoers.d/${var.ssh_username}-nopasswd",
+      "echo 'Verifying Xcode Command Line Tools'",
+      "xcode-select -p || { echo 'ERROR: CLT not found in source image. Use ghcr.io/macstadium/orka-images/tahoe:200-gb-clt as source_image.'; exit 1; }",
+      "echo 'Xcode CLT verified'",
       "echo 'Installing Homebrew'",
       "echo '${var.ssh_password}' | sudo -S mkdir -p /opt/homebrew",
       "echo '${var.ssh_password}' | sudo -S chown -R ${var.ssh_username}:${var.ssh_username} /opt/homebrew",
@@ -57,19 +61,14 @@ build {
 
   provisioner "shell" {
     inline = [
-      "# Configure Homebrew PATH and install development tools",
-      "# Note: Homebrew is installed in previous provisioner",
-      "# Add or delete tools from this list as needed for your use case",
       "echo >> /Users/${var.ssh_username}/.zprofile",
-      "echo 'eval \"$(/opt/homebrew/bin/brew shellenv\"' >> /Users/${var.ssh_username}/.zprofile",
+      "echo 'eval \"$(/opt/homebrew/bin/brew shellenv)\"' >> /Users/${var.ssh_username}/.zprofile",
       "eval \"$(/opt/homebrew/bin/brew shellenv)\"",
       "brew install fastlane",
       "brew install git",
       "brew install cocoapods",
       "brew install swift",
-      "",
-      "# Note: Install Xcode manually or use xcodes after image is created",
-      "# xcodes requires Command Line Tools which need interactive installation",
+      "# Note: Install Xcode via xcodes using your Apple ID after image is created",
     ]
   }
 }
