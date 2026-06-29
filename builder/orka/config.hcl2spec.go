@@ -86,6 +86,7 @@ type FlatConfig struct {
 	OrkaLegacyIO              *bool             `mapstructure:"orka_enable_legacy_io" cty:"orka_enable_legacy_io" hcl:"orka_enable_legacy_io"`
 	EnableOrkaNodeIPMapping   *bool             `mapstructure:"enable_orka_node_ip_mapping" cty:"enable_orka_node_ip_mapping" hcl:"enable_orka_node_ip_mapping"`
 	OrkaNodeIPMap             map[string]string `mapstructure:"orka_node_ip_map" cty:"orka_node_ip_map" hcl:"orka_node_ip_map"`
+	UseVMIP                   *bool             `mapstructure:"use_vm_ip" cty:"use_vm_ip" hcl:"use_vm_ip"`
 	PackerVMWaitTimeout       *int              `mapstructure:"packer_vm_timeout" cty:"packer_vm_timeout" hcl:"packer_vm_timeout"`
 	PackerPushTimeout         *int              `mapstructure:"packer_push_timeout" cty:"packer_push_timeout" hcl:"packer_push_timeout"`
 }
@@ -178,6 +179,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"orka_enable_legacy_io":        &hcldec.AttrSpec{Name: "orka_enable_legacy_io", Type: cty.Bool, Required: false},
 		"enable_orka_node_ip_mapping":  &hcldec.AttrSpec{Name: "enable_orka_node_ip_mapping", Type: cty.Bool, Required: false},
 		"orka_node_ip_map":             &hcldec.AttrSpec{Name: "orka_node_ip_map", Type: cty.Map(cty.String), Required: false},
+		"use_vm_ip":                    &hcldec.AttrSpec{Name: "use_vm_ip", Type: cty.Bool, Required: false},
 		"packer_vm_timeout":            &hcldec.AttrSpec{Name: "packer_vm_timeout", Type: cty.Number, Required: false},
 		"packer_push_timeout":          &hcldec.AttrSpec{Name: "packer_push_timeout", Type: cty.Number, Required: false},
 	}

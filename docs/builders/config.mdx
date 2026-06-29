@@ -55,7 +55,7 @@ build {
 
 * `orka_endpoint` _(string)_ (optional): The Orka API endpoint to use
 
-* `orka_auth_token` _(string)_ **(required)**: The authentication token of the user. This must be a [service account token](https://support.macstadium.com/hc/en-us/articles/28333065069211-Orka-Cluster-Manage-Service-Accounts) and can be created following the instructions outlined in the linked supporting documentation. 
+* `orka_auth_token` _(string)_ **(required)**: The authentication token of the user. This must be a [service account token](https://support.macstadium.com/hc/en-us/articles/28333065069211-Orka-Cluster-Manage-Service-Accounts) and can be created following the instructions outlined in the linked supporting documentation.
 
 * `ssh_user` _(string)_ (optional): User on the virtual machine
 
@@ -73,7 +73,7 @@ build {
 
 * `orka_vm_tag` _(string)_ (optional): Image tag name for the builder VM
 
-* `packer_vm_timeout` _(int)_ (optional): Time packer will wait for a VM to finish launching in minutes. 
+* `packer_vm_timeout` _(int)_ (optional): Time packer will wait for a VM to finish launching in minutes.
 
 * `packer_push_timeout` _(int)_ (optional): Timeout in minutes packer will wait for image to push to an OCI registry. If the timeout is reached, the image will continue to push in the background. Default 60 minutes.
 
@@ -94,6 +94,8 @@ The following use cases do not need to be used in most scenarios.
 * `enable_orka_node_ip_mapping` _(bool)_ (optional): The plugin defaults to using the default node ips. If this option is set to true, the builder will use the passed in map under `orka_node_ip_map` to resolve ips.
 
 * `orka_node_ip_map` _(map[string]string)_ (optional): Required if `enable_orka_node_ip_mapping`. Map of Internal Node IPs to External Node Ips.
+
+* `use_vm_ip` _(bool)_ (optional): Defaults to `false`. When set to `true`, Packer connects via SSH using the VM's own IP address instead of the Orka node IP. This is useful in environments (e.g. a MacStadium Kubernetes cluster using DHCP) where the node IP is not the correct address to reach the VM and the build would otherwise fail to connect.
 
 # Information Notes / Gotchas
 

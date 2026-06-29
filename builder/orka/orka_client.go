@@ -34,7 +34,7 @@ type OrkaClient interface {
 	Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error
 	Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error
 	Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error
-	WaitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error)
+	WaitForVm(ctx context.Context, namespace, name string, timeout int, useVMIP bool) (string, int, error)
 	WaitForImage(ctx context.Context, name string) error
 	WaitForPush(ctx context.Context, namespace, name string, timeout int) error
 }
@@ -114,18 +114,18 @@ func lookupIP(orkaEndpoint string) net.IP {
 	return ips[0]
 }
 
-func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error) {
+func (c *RealOrkaClient) WaitForVm(ctx context.Context, namespace, name string, timeout int, useVMIP bool) (string, int, error) {
 	var host string
 	var port int
 	err := RetryOnWatcherErrorWithTimeout(ctx, time.Duration(timeout)*time.Minute, func(contextWithTimeout context.Context) error {
 		var err error
-		host, port, err = c.waitForVm(contextWithTimeout, namespace, name, timeout)
+		host, port, err = c.waitForVm(contextWithTimeout, namespace, name, timeout, useVMIP)
 		return err
 	}, 1*time.Second)
 	return host, port, err
 }
 
-func (c *RealOrkaClient) waitForVm(ctx context.Context, namespace, name string, timeout int) (string, int, error) {
+func (c *RealOrkaClient) waitForVm(ctx context.Context, namespace, name string, timeout int, useVMIP bool) (string, int, error) {
 	vmiList := &orkav1.VirtualMachineInstanceList{}
 	watcher, err := c.Watch(ctx, vmiList, client.InNamespace(namespace), client.MatchingFields{"metadata.name": name})
 	if err != nil {
@@ -147,7 +147,13 @@ func (c *RealOrkaClient) waitForVm(ctx context.Context, namespace, name string, 
 
 			if vmi.Status.Phase == orkav1.VMRunning {
 				ip := vmi.Status.IP
-				if ip == "" {
+				if useVMIP {
+					// Force connecting to the VM's own IP (e.g. DHCP environments
+					// where the node IP is not the correct address to reach the VM).
+					if ip == "" {
+						return "", 0, fmt.Errorf("use_vm_ip is enabled but the VM does not report its own IP yet")
+					}
+				} else if ip == "" {
 					ip = vmi.Status.HostIP
 				}
 				return ip, *vmi.Status.SSHPort, nil

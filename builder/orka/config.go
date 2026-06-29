@@ -64,6 +64,12 @@ type Config struct {
 	// Required if Enable Orka IP Mapping is enabled. Map of Node Ips to the external IP values.
 	OrkaNodeIPMap map[string]string `mapstructure:"orka_node_ip_map"`
 
+	// When set to true, Packer will connect via SSH using the VM's own IP address
+	// instead of the Orka node IP. This is useful in environments (e.g. a MacStadium
+	// Kubernetes cluster using DHCP) where the node IP is not the correct address to
+	// reach the VM. Defaults to false.
+	UseVMIP bool `mapstructure:"use_vm_ip"`
+
 	// Configuration for VM launch timeout
 	PackerVMWaitTimeout int `mapstructure:"packer_vm_timeout"`
 
