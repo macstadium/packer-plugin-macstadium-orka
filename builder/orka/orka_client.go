@@ -146,15 +146,9 @@ func (c *RealOrkaClient) waitForVm(ctx context.Context, namespace, name string, 
 			vmi := event.Object.(*orkav1.VirtualMachineInstance)
 
 			if vmi.Status.Phase == orkav1.VMRunning {
-				ip := vmi.Status.IP
-				if useVMIP {
-					// Force connecting to the VM's own IP (e.g. DHCP environments
-					// where the node IP is not the correct address to reach the VM).
-					if ip == "" {
-						return "", 0, fmt.Errorf("use_vm_ip is enabled but the VM does not report its own IP yet")
-					}
-				} else if ip == "" {
-					ip = vmi.Status.HostIP
+				ip, err := resolveVMIP(vmi, useVMIP)
+				if err != nil {
+					return "", 0, err
 				}
 				return ip, *vmi.Status.SSHPort, nil
 			}
@@ -165,6 +159,21 @@ func (c *RealOrkaClient) waitForVm(ctx context.Context, namespace, name string, 
 			}
 		}
 	}
+}
+
+// resolveVMIP determines which IP Packer should use to reach the VM.
+// When useVMIP is true, the VM's own IP is required (useful in DHCP
+// environments where the node IP is not reachable). Otherwise it falls
+// back to the Orka node (host) IP when the VM IP is not set.
+func resolveVMIP(vmi *orkav1.VirtualMachineInstance, useVMIP bool) (string, error) {
+	ip := vmi.Status.IP
+	if ip != "" {
+		return ip, nil
+	}
+	if useVMIP {
+		return "", fmt.Errorf("use_vm_ip is enabled but the VM does not report its own IP yet")
+	}
+	return vmi.Status.HostIP, nil
 }
 
 func (c *RealOrkaClient) WaitForImage(ctx context.Context, name string) error {
